@@ -27,3 +27,29 @@
 *.exe
 *.out
 *.app
+
+# Executables test
+test-3dice
+test-dramsim
+test-failure
+test-hotspot
+test-intsim
+test-mcpat
+test-microfluidics
+test-tsv
+
+# kitfox build libarys 
+library/energylib_dramsim/DRAMSim2-2.2.2/
+library/energylib_dramsim/tarball/
+library/energylib_intsim/intsim_alpha/
+library/energylib_mcpat/McPAT08release/
+library/energylib_mcpat/tarball/
+library/energylib_tsv/tsv_v1.0/
+library/reliabilitylib_failure/failure_v1.0/
+library/thermallib_3dice/3d-ice/
+library/thermallib_3dice/SuperLU_4.3/
+library/thermallib_3dice/tarball/
+library/thermallib_hotspot/HotSpot-5.02/
+library/thermallib_hotspot/tarball/
+library/thermallib_microfluidics/Microfluidics/
+
