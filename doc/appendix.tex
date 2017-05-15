@@ -1,0 +1,1814 @@
+\appendix
+\section{Configuration Examples} \label{app:sec:configuration}
+\noindent
+This section is mainly comprised of input configuration code. 
+It is intended for users that need examples to find which parameters are necessary for different physical models. 
+Models are listed in the alphabetical order.
+
+\subsection{DRAMSim2}
+\noindent
+Below is an example of configuring DRAMSim2 parameters.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    /* DRAMSim2 (Micron) memory power model */
+    memory: \{
+        library: \{
+            model = "dramsim";
+            
+            /* DDR2 micron 16M 8b x 8 sg3E model */
+            IDD0 = 85;
+            IDD1 = 100;
+            IDD2P = 7;
+            IDD2Q = 40;
+            IDD2N = 40;
+            IDD3Pf = 30;
+            IDD3Ps = 10;
+            IDD3N = 55;
+            IDD4W = 135;
+            IDD4R = 135;
+            IDD5 = 215;
+            IDD6 = 7;
+            IDD6L = 5;
+            IDD7 = 280;
+            
+            BL = 4;
+            DEVICE_WIDTH = 8;
+            DATA_BUS_BITS = 64;
+            
+            tRC = 18;
+            tRAS = 14;
+            tRFC = 43;
+            
+            voltage = 1.8;
+            clock_frequency = 0.333e9; // 333MHz
+            
+            page_policy = "open_page";
+            
+            /* Other DRAMSim2 parameters are for functional simulation, 
+            not necessarily for power. */
+        \};
+    \};
+\};
+\end{alltt}
+}
+
+\pagebreak
+\subsection{DSENT}
+\noindent
+The following shows an example of configuring DSENT components. 
+In this example, DSENT components are defined as sub-components of the root component $|package|$ (refer to Section \ref{subsec:multilevel_components} for multi-level components and configuration) that defines common variables for different types of DSENT models.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    package: \{
+        library: \{
+            model = "none";
+            
+            /* Common parameters */
+            temperature = 340.0; // 340K initial temperature
+            voltage = 0.8; // 0.8V supply voltage
+            clock_frequency = 1.0e9; // 1GHz clock frequency
+            
+            /* Bulk22LVT - DSENT technology model */
+            Gate: \{
+                PitchContacted = 0.120e-6;
+                MinWidth = 0.100e-6;
+                CapPerWidth = 0.900e-9;
+            \};
+            
+            Drain: \{
+                CapPerWidth = 0.620e-9;
+            \};
+            
+            Nmos: \{
+                CharacterizedTemperature = 300.0;
+                EffResWidth = 0.700e-3;
+                EffResStackRatio = 0.800;
+                OffCurrent = 100e-3;
+                MinOffCurrent = 60e-9;
+                SubthresholdSwing = 0.100;
+                DIBL = 0.150;
+                SubthresholdTempSwing = 100.0;
+            \};
+            
+            Pmos: \{
+                CharacterizedTemperature = 300.0;
+                EffResWidth = 0.930e-3;
+                EffResStackRatio = 0.680;
+                OffCurrent = 100e-3;
+                MinOffCurrent = 60e-9;
+                SubthresholdSwing = 0.100;
+                DIBL = 0.150;
+                SubthresholdTempSwing = 100.0;
+            \};
+            
+            Wire: \{
+                available_layers = ["Metal1", 
+                                    "Local", 
+                                    "Intermediate", 
+                                    "Semiglobal", 
+                                    "Global"];
+                Metal1: \{
+                    MinWidth = 32e-9;
+                    MinSpacing = 32e-9;
+                    Resistivity = 5.00e-8;
+                    MetalThickness = 60.0e-9;
+                    DielectricThickness = 60.0e-9;
+                    DielectricConstant = 3.00;
+                \};
+                
+                Local: \{
+                    MinWidth = 32e-9;
+                    MinSpacing = 32e-9;
+                    Resistivity = 5.00e-8;
+                    MetalThickness = 60.0e-9;
+                    DielectricThickness = 60.0e-9;
+                    DielectricConstant = 3.00;
+                \};
+                
+                Intermediate: \{
+                    MinWidth = 55e-9;
+                    MinSpacing = 55e-9;
+                    Resistivity = 4.00e-8;
+                    MetalThickness = 100.0e-9;
+                    DielectricThickness = 100.0e-9;
+                    DielectricConstant = 2.80;
+                \};
+                
+                Semiglobal: \{
+                    MinWidth = 110e-9;
+                    MinSpacing = 110e-9;
+                    Resistivity = 2.60e-8;
+                    MetalThickness = 200.0e-9;
+                    DielectricThickness = 170.0e-9;
+                    DielectricConstant = 2.80;
+                \};
+                
+                Global: \{
+                    MinWidth = 160e-9;
+                    MinSpacing = 160e-9;
+                    Resistivity = 2.30e-8;
+                    MetalThickness = 280.0e-9;
+                    DielectricThickness = 250.0e-9;
+                    DielectricConstant = 2.60;
+                \};
+            \};
+            
+            StdCell: \{
+                Tracks = 11;
+                HeightOverheadFactor = 1.400;
+                AvailableSizes = [1.0, 1.4, 2.0, 3.0, 4.0, 6.0, 8.0, 10.0, 12.0, 16.0];
+            \};
+            
+            /* Photonics */
+            Waveguide: \{
+                LossPerMeter = 100.0;
+                Pitch = 4.0e-6;
+            \};
+            
+            Splitter: \{ Loss = 1.00; \}
+            Coupler: \{ Loss = 1.00; \};
+            
+            Laser: \{
+                CW: \{
+                    Efficiency = 0.25;
+                    LaserDiodeLoss = 1.0;
+                    Area = 0.0;
+                \};
+                GatedCW: \{
+                    Efficiency = 0.25;
+                    LaserDiodeLoss = 1.0;
+                    Area = 200e-12;
+                \};
+            \};
+            
+            Modulator: \{
+                Ring: \{
+                    SupplyBoostRatio = 1.2;
+                    ParasiticRes = 100.0;
+                    ParasiticCap = 5e-15;
+                    FCPDEffect = 3e-27;
+                    Tn = 0.01;
+                    NA = 3e24;
+                    ND = 1e24;
+                    ni = 1e16;
+                    JunctionRatio = 0.8;
+                    Height = 500e-9;
+                    Width = 500e-9;
+                    ConfinementFactor = 0.3;
+                \};
+            \};
+            
+            Ring: \{
+                Area = 100e-12;
+                Lambda = 1300e-9;
+                GroupIndex = 4;
+                Radius = 3e-6;
+                ConfinementFactor = 0.3;
+                ThroughLoss = 0.01;
+                DropLoss = 1.0;
+                MaxQualityFactor = 150e3;
+                HeatingEfficiency = 100000;
+                TuningEfficiency = 10e9;
+                LocalVariationSigma = 200e9;
+                TemperatureMax = 380;
+                TemperatureMin = 280;
+                MaxElectricallyTunableFreq = 50e9;
+            \};
+            
+            Photodetector: \{
+                Reponsivity = 1.1;
+                Area = 10e-12;
+                Cap = 0.0;
+                ParasiticCap = 5.0e-15;
+                Loss = 1.0;
+                MinExtinctionRatio = 3.0;
+                AvalancheGain = 1.0;
+            \};
+            
+            SenseAmp: \{
+                BER = 1e-15;
+                CMRR = 5.0;
+                OffsetCompensationBits = 5;
+                OffsetRatio = 0.04;
+                SupplyNoiseRandRatio = 0.01;
+                SupplyNoiseDetRatio = 0.05;
+                NoiseMargin = 0.02;
+                JitterRatio = 0.01;
+            \};
+            
+            Receiver: \{
+                Int: \{ IntegrationTimeRatio = 0.7; \};
+            \};
+        \};
+        
+        component: \{
+            /* DSENT router model */
+            router: \{ // package.router
+                library: \{
+                    model = "dsent";
+                    energy_model = "Router";
+                    tech_model = "Bulk22LVT";
+                    IsPerformTimingOptimization = true;
+                    TimingOptimization: \{ StartNetNames = []; \};
+                    TDPInjectionRate = 0.3;
+                    NumberInputPorts = 5;
+                    NumberOutputPorts = 5;
+                    NumberBitsPerFlit = 64;
+                    NumberVirtualNetworks = 2;
+                    NumberVirtualChannelsPerVirtualNetwork = [2, 3];
+                    NumberBuffersPerVirtualChannel = [4, 5];
+                    InputPort: \{ BufferModel = "DFFRAM"; \};
+                    CrossbarModel = "MultiplexerCrossbar";
+                    SwitchAllocator: \{ ArbiterModel = "MatrixArbiter"; \};
+                    ClockTreeModel = "BroadCastHTree";
+                    ClockTree: \{
+                        NumberLevels = 5;
+                        WireLayer = "Global";
+                        WireWidthMultiplier = 1.0;
+                    \};
+                \};
+            \};
+            
+            /* DSENT electrical link model */
+            electrical_link: \{ // package.electrical\_link
+                library: \{
+                    model = "dsent";
+                    energy_model = "RepeatedLink";
+                    tech_model = "Bulk22LVT";
+                    IsPerformTimingOptimization = false;
+                    TimingOptimization: \{ StartNetNames = []; \};
+                    TDPInjectionRate = 0.3;
+                    NumberBits = 64;
+                    WireLayer = "Global";
+                    WireWidthMultiplier = 1.0;
+                    WireSpacingMultiplier = 1.0;
+                    WireLength = 1e-3;
+                    Delay = 1e-9;
+                \};
+            \};
+        \};
+    \};
+\};
+\end{alltt}
+}
+
+\pagebreak
+\subsection{IntSim}
+\noindent
+Below is a configuration example to use IntSim. 
+IntSim characterizes the power at the chip-level based on transistor density, wire length, etc, which means that this power model is not characterized with respect to microarchitectural configurations.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    /* IntSim chip-level power model */
+    chip: \{
+        library: \{
+            model = "intsim";
+            energy_model = "default";
+                        
+            feature_size = 22e-9; // 22nm technology
+            clock_frequency = 2e9; // 2GHz
+            voltage = 0.8; // 0.8V Vdd
+            temperature = 358.0; // Avg temperature
+            threshold_voltage = 0.14;
+            
+            area = 35e-6; // 35mm^2 
+            num_gates = 58e6; // 58M transistors
+            critical_path_depth = 10;
+            rents_constant_k = 4;
+            rents_constant_p = 0.6;
+            activity_factor = 0.1; // Avg switching activity factor
+            tdp_activity_factor = 0.2;
+            Vdd_spec = 0.8;
+            Vt_spec = 0.14;
+            oxide_thickness = 1.1e-9;
+            alpha_power_law = 1.3;
+            pn_ratio = 0.5;
+            subvtslope_spec = 100e-3;
+            dielectric_permitivity = 2.0;
+            copper_resistivity = 1.95e-8;
+            wiring_aspect_ratio = 2.0;
+            reflectivity_coefficient = 0.5;
+            specularity = 0.5;
+            num_power_pads = 600;
+            power_pad_distance = 300e-6;
+            power_pad_length = 50e-6;
+            ir_drop_limit = 0.02;
+            router_efficiency = 0.5;
+            repeater_efficiency = 0.5;
+            average_fanouts = 3;
+            clock_margin = 0.2;
+            HTree_max_span = 3e-3;
+            latches_per_buffer = 20;
+            clock_factor = 1.0;
+            clock_gating_factor = 0.4;
+            max_tier = 40;
+        \};
+    \};
+\};            
+\end{alltt}
+}
+
+\pagebreak
+\subsection{McPAT}
+\noindent
+McPAT is comprised of multiple models that can be individually instantiated in KitFox.
+Below is the list of McPAT models and their sub-models ($|cache|$ of $|array|$ for example).
+\begin{itemize}
+\item{array: Storage unit model\vspace*{-5pt}\leavevmode
+\begin{itemize}
+\item{memory: Memory model} \vspace*{-5pt}\leavevmode
+\item{cache: Cache model} \vspace*{-5pt}\leavevmode
+\item{ram: SRAM model} \vspace*{-5pt}\leavevmode
+\item{cam: CAM model} \vspace*{-5pt}\leavevmode
+\end{itemize}
+}
+\item{dep\_resource\_conflict\_check: Dependency check logic model (instruction dependency)} \vspace*{-5pt}\leavevmode
+\item{flash\_controller: Flash controller model} \vspace*{-5pt}\leavevmode
+\item{functional\_unit: Functional unit model \vspace*{-5pt}\leavevmode
+\begin{itemize}
+\item{alu: ALU model} \vspace*{-5pt}\leavevmode
+\item{mul: MUL/DIV model} \vspace*{-5pt}\leavevmode
+\item{fpu: FPU model} \vspace*{-5pt}\leavevmode
+\end{itemize}
+}
+\item{inst\_decoder: Instruction decoder model} \vspace*{-5pt}\leavevmode
+\item{interconnect: Interconnect wire model} \vspace*{-5pt}\leavevmode
+\item{memory\_controller: Memory controller model including Frontend, Backend, and PHY} \vspace*{-5pt}\leavevmode
+\item{noc: Network model \vspace*{-5pt}\leavevmode
+\begin{itemize}
+\item{noc\_bus: Network bus model} \vspace*{-5pt}\leavevmode
+\item{noc\_router: Network router model} \vspace*{-5pt}\leavevmode
+\end{itemize}
+}
+\item{niu\_controller: NIU controller model} \vspace*{-5pt}\leavevmode
+\item{pice\_controller: PCIe controller model} \vspace*{-5pt}\leavevmode
+\item{pipeline: Latches of core pipeline stages} \vspace*{-5pt}\leavevmode
+\item{selection\_logic: Selection logic model (reservation station)} \vspace*{-5pt}\leavevmode
+\item{undiff\_core: Undifferentiated core model that is not functionally categorized such as some custom logics}
+\end{itemize}
+
+\noindent
+The following shows an example of configuring the McPAT models listed above. 
+In the example, McPAT components are defined as sub-components of the root component $|package|$ (refer to Section \ref{subsec:multilevel_components} for multi-level components and configuration) that defines common parameters for different types of McPAT models.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    package: \{
+        library: \{
+            model = "none";
+            
+            /* Common parameters */
+            clock_frequency = 3.0e9; // 3GHz clock frequency
+            voltage = 1.2; // 1.2V
+            features_size = 22nm; // 22nm technology
+            temperature = 350; // Avg temperature
+
+            /* Optimization parameters */
+            opt_for_clk = true;
+            obj_func_dyn_energy = 0;
+            obj_func_dyn_power = 0;
+            obj_func_leak_power = 0;
+            obj_func_cycle_t = 1;
+            delay_wt = 100;
+            area_wt = 0;
+            dynamic_power_wt = 100;
+            leakage_power_wt = 0;
+            cycle_time_wt = 0;
+            delay_dev = 10000;
+            area_dev = 10000;
+            dynamic_power_dev = 10000;
+            leakage_power_dev = 10000;
+            cycle_time_dev = 10000;
+            ed =  2;
+            nuca = 0;
+            nuca_bank_count = 0;
+            delay_wt_nuca = 0;
+            area_wt_nuca = 0;
+            dynamic_power_wt_nuca = 0;
+            leakage_power_wt_nuca = 0;
+            cycle_time_wt_nuca = 0;
+            delay_dev_nuca = 10000;
+            area_dev_nuca = 10000;
+            dynamic_power_dev_nuca = 10;
+            leakage_power_dev_nuca = 10000;
+            cycle_time_dev_nuca = 10000;
+            force_wiretype = false;
+            rpters_in_htree = true;
+            with_clock_grid = false;
+            force_cache_config = false;
+            
+            wire_type = "global"; /* "global", "global_5", "global_10", "global_20", 
+                        "global_30", "low_swing", "semi_global", "transmission", or "optical" */
+            wiring_type = "global"; // "local", "semi_global", "global", or "dram"
+            device_type = "hp"; // "hp", "lstp", "lop", "lp_dram", or "comm_dram"
+            interconnect_projection = "aggressive"; // "aggressive" or "conservative"
+            embedded = false;
+            longer_channel_device = false;
+        \};
+        
+        component: \{
+            core: \{ // package.core
+                library: \{
+                    component_type = "core"; // "core", "llc", or "uncore"
+                    core_type = "ooo"; // "ooo" or "inorder"
+                    opt_local = false;
+                \};
+                component: \{
+                    array\_cache: \{ // package.core.array\_cache
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "array";
+                            energy_submodel = "cache";
+
+                            line_size = 64; // 64B line size
+                            out_width = 512; // line_size*8 bits of output width
+                            assoc = 4; // 4-way assoc
+                            size = 32768; // 32KB size
+                            tag_width = 44; // Tag bits
+                            num_rw_ports = 1; // R/W ports
+                            num_rd_ports = 0;
+                            num_wr_ports = 0;
+                            num_se_rd_ports = 0;
+                            num_search_ports = 0; // Only for fully-associative cache
+                            nbanks = 1; // 1 bank
+                            cycle_time = 1; // Cycle time
+                            access_time = 1; // Access time
+                            access_mode = "normal"; // "normal", "sequential", or "fast"
+                            add_ecc_b = true; // Model ECC bits?
+                            adjust_area = false;
+                        \};
+                    \};
+
+                    dep\_resource\_conflict\_check: \{ // package.core.dep\_resource\_conflict\_check
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "dep_resource_conflict_check";
+
+                            compare_bits = 4;
+                            decode_width = 4;
+                        \};
+                    \};
+                    
+                    functional\_unit\_alu: \{ // package.core.functional\_unit\_alu
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "functional_unit";
+                            energy_submodel = "alu";
+                            
+                            scaling = 4; // Model 4 ALUs with this component.
+                        \};
+                    \};
+                    
+                    functional\_unit\_mul: \{ // package.core.functional\_unit\_mul
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "functional_unit";
+                            energy_submodel = "mul";
+                        \};
+                    \};
+                    
+                    functional\_unit\_fpu: \{ // package.core.functional\_unit\_fpu
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "functional_unit";
+                            energy_submodel = "fpu";
+                        \};
+                    \};
+                    
+                    inst\_decoder: \{ // package.core.inst\_decoder
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "inst_decoder";
+                            
+                            x86 = true; // x86 instruction decoder?
+                            decode_length = 16; // opcode length
+                            scaling = 4; // Model 4 decoders with this component
+                        \};
+                    \};
+                    
+                    interconnect: \{ // package.core.interconnect
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "interconnect";
+                            
+                            wire_length = 1e-4; // 100um
+                            pipelinable = false;
+                            opt_local = false;
+                            data_width = 64; // 64-bit data width
+                            wire_type = "global";
+                        \};
+                    \};
+                    
+                    pipeline: \{ // package.core.pipeline
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "pipeline";
+                            
+                            pipeline_stages = 32;
+                            x86 = true;
+                            micro_opcode_length = 16;
+                            pc_width = 64;
+                            fetch_width = 4;
+                            decode_width = 4;
+                            issue_width = 6;
+                            commit_width = 4;
+                            instruction_length = 128;
+                            int_data_width = 64;
+                            num_hthreads = 1; // Hyperthreading
+                            thread_states = 32; // Num of per-thread states
+                            arch_int_regs = 32;
+                            phy_int_regs = 128;
+                            virtual_address_width = 64;
+                        \};
+                    \};
+                    
+                    selection\_logic: \{ // package.core.selection\_logic
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "selection_logic";
+                            
+                            selection_input = 36;
+                            selection_output = 6;
+                        \};
+                    \};
+                    
+                    undiff\_core: \{ // package.core.undiff\_core
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "undiff_core";
+                            
+                            pipeline_stages = 32;
+                            issue_width = 6;
+                            num_hthreads = 1;
+                            opt_clockrate = false;
+                        \};
+                    \};
+                \};
+            \}; // End of package.core
+            
+            uncore: \{
+                library: \{
+                    component_type = "uncore"; // "core", "llc", or "uncore"
+                \};
+                component: \{
+                    flash\_controller: \{ // package.core.flash\_controller
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "flash_controller";
+                            
+                            controller_type = "low_power"; // "high_performance" or "low_power"
+                            total_load_percentage = 0.7;
+                            peak_transfer_rate = 200; // 200MB/S
+                            withPHY = true;
+                        \};
+                    \};
+                    
+                    memory\_controller: \{ // package.core.memory\_controller
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "memory_controller";
+                            
+                            controller_type = "low_power"; // "high_performance" or "low_power"
+                            line_size = 64; // Buffer line size
+                            databus_width = 64;
+                            addressbus_width = 64;
+                            num_channels = 2;
+                            transfer_rate = 3200; // 3200MB/S peak transfer rate
+                            num_ranks = 2;
+                            lvds = true;
+                            withPHY = false;
+                            request_window_size = 128;
+                            IO_buffer_size = 64;
+                            physical_address_width = 51;
+                        \};
+                    \};
+                    
+                    niu\_controller: \{ // package.core.niu\_controller
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "niu_controller";
+                            
+                            controller_type = "low_power"; // "high_performance" or "low_power"
+                            total_load_percentage = 0.7;
+                        \};
+                    \};
+                    
+                    noc\_router: \{ // package.core.noc\_router
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "noc";
+                            energy_submodel = "noc_router";
+                            
+                            input_ports = 5;
+                            output_ports = 5;
+                            virtual_channels = 4;
+                            input_buffer_entries = 8;
+                            flit_bits = 128;
+                            duty_cycle = 0.3;
+                            traffic_pattern = 1.0;
+                            
+                        \};
+                    \};
+                    
+                    noc\_bus: \{ // package.core.noc\_bus
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "noc";
+                            energy_submodel = "noc_bus";
+                            
+                            link_throughput = 1;
+                            link_latency = 1;
+                            chip_coverage = 1.0;
+                            route_over_percentage = 0.5;
+                            link_length = 10e-3; // or define "chip_area = 100e-6;"
+                        \};
+                    \};
+                    
+                    pcie\_controller: \{ // package.core.pcie\_controller
+                        library: \{
+                            model = "mcpat";
+                            energy_model = "pcie_controller";
+                            
+                            controller_type = "low_power"; // "high_performance" or "low_power"
+                            total_load_percentage = 0.7;
+                            withPHY = true;
+                            num_channels = 8;
+                        \};
+                    \};
+                \};
+            \}; // End of package.uncore
+        \};
+    \}; // End of package
+\};
+\end{alltt}
+}
+
+\pagebreak
+\subsection{Failure}
+\noindent
+Failure includes the models of various failure mechanisms. Below is an example of using Failure model.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    failure: \{
+        library: \{
+            model = "failure";
+            feature_size = 22e-9; // 22nm technology
+            voltage = 1.0; // 1.0V
+            clock_frequency = 2.0e9; // 2GHz
+            
+            failure_model: \{
+                hci: \{ // HCI model
+                    n = 3.0;
+                    Ea = -0.1;
+                \};
+                
+                em: \{ // Electromigration model
+                    n = 2.0;
+                    Ea = 0.9;
+                \};
+                
+                nbti: \{ // NBTI model
+                    n = 5.0;
+                    Ea = 0.4;
+                \};
+                
+                sm: \{ // Stress migration model
+                    T0 = 500.0;
+                    n = 2.5;
+                    Ea = 0.9;
+                \};
+                
+                tddb: \{ // TDDB model
+                    a = 78.0;
+                    b = -0.081;
+                    c = 0.1;
+                    x = -0.759;
+                    y = 66.8;
+                    z = 8.37e-4;
+                    Ea = 0.7;
+                \};
+            \};
+            
+            /* Target conditions that the failure models are tuned to meet the MTTF */
+            target_temperature = 338;
+            target_voltage = 1.0;
+            target_frequency = 2.0e9;
+            target_MTTF = 3.15532800e8; // 10 years of MTTF (in seconds)
+        \};
+    \};
+\};
+\end{alltt}
+}
+
+\pagebreak
+\subsection{3D-ICE}
+\noindent
+3D-ICE supports liquid cooling model in the 3D package. 
+In the example below, 3D-ICE is associated with the root-level component $|package|$, and its sub-components are designated as floorplans. 
+Each partition component specifies the geometry of the floorplan.
+{\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    package: \{
+        library: \{
+            model = "3d-ice";
+            thermal_analysis = "transient";
+            ambient_temperature = 300.0;
+            temperature = 320.0; // Initial temperature
+            chip_width = 10e-3; // 10mm
+            chip_height = 10e-3; // 10mm
+            grid_rows = 100;
+            grid_cols = 100;
+            grid_map_mode = "avg"; // "avg", "center", "min", or "max"
+            
+            material: \{
+                SILICON: \{
+                    thermal_conductivity = 1.30e-4;
+                    volumetric_heat_capacity = 1.638e-12;
+                \};
+                
+                BEOL: \{
+                    thermal_conductivity = 2.25e-6;
+                    volumetric_heat_capacity = 2.175e-12;
+                \};
+            \};
+            
+            conventional_heat_sink: \{
+                heat_transfer_coefficient = 1.0e-7;
+            \};
+            
+            microchannel: \{
+                type = "2rm";
+                height = 100e-6;
+                channel_length = 50e-6;
+                wall_length = 50e-6;
+                wall_material = "SILICON";
+                coolant_flow_rate = 42;
+                coolant_heat_transfer_coefficient_top = 5.7132e-8;
+                coolant_heat_transfer_coefficient_bottom = 4.7132e-8;
+                coolant_heat_volumetric_heat_capacity = 4.172e-12;
+                coolant_incoming_temperature = 300.0;
+            \};
+            
+            die: \{
+                TOP_IC: \{
+                    layer: \{
+                        /* Layers must be listed sequentially from the top to bottom. */
+                        SOURCE_LAYER: \{
+                            height = 2e-6;
+                            material = "SILICON";
+                            is_source_layer = true;
+                        \};
+                        BOTTOM_LAYER: \{
+                            height = 50e-6;
+                            material = "SILICON";
+                            is_source_layer = false;
+                        \};
+                    \};
+                \};
+                
+                BOTTOM_IC: \{
+                    layer: \{
+                        TOP_LAYER: \{
+                            height = 10e-6;
+                            material = "BEOL";
+                            is_source_layer = false;
+                        \};
+                        SOURCE_LAYER: \{
+                            height = 2e-6;
+                            material = "SILICON";
+                            is_source_layer = true;
+                        \};
+                        BOTTOM_LAYER: \{
+                            height = 50e-6;
+                            material = "SILICON";
+                            is_source_layer = false;
+                        \};
+                    \};
+               \};
+            \};
+            
+            stack: \{
+                // IMPORTANT: Stacks must be listed sequentially from the top to bottom.
+                MEMORY_DIE: \{
+                    type = "die";
+                    die = "TOP_IC";
+                \};
+                TOP_CHANNEL: \{
+                    type = "channel";
+                \};
+                CORE_DIE: \{
+                    type = "die";
+                    die = "BOTTOM_IC";
+                \};
+                BOTTOM_CHANNEL: \{
+                    type = "channel";
+                \};
+                BOTTOM_MOST: \{
+                    type = "layer";
+                    height = 10e-6;
+                    material = "BEOL";
+                    is_source_layer = false;
+                \};
+            \};
+            
+            partition = ["package.MEMORY_DIE-Background1",
+                         "package.MEMORY_DIE-Background2",
+                         "package.MEMORY_DIE-HotSpot1",
+                         "package.MEMORY_DIE-HotSpot2",
+                         "package.CORE_DIE-Core0",
+                         "package.CORE_DIE-Core1",
+                         "package.CORE_DIE-Core2",
+                         "package.CORE_DIE-Core3",
+                         "package.CORE_DIE-Core4",
+                         "package.CORE_DIE-Core5",
+                         "package.CORE_DIE-Core6",
+                         "package.CORE_DIE-Core7",
+                         "package.CORE_DIE-Cache0",
+                         "package.CORE_DIE-Cache1",
+                         "package.CORE_DIE-CLK",
+                         "package.CORE_DIE-FPU",
+                         "package.CORE_DIE-CrossBar"];
+        \};
+        
+        /* Components that are designated as floorplans */
+        component: \{
+            MEMORY\_DIE-Background1: \{ // package.MEMORY\_DIE-Background1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0;
+                        bottom = 0.0;
+                        width = 5e-3;
+                        height = 5e-3;
+                        die_name = "MEMORY_DIE";
+                        die_index = 1;
+                    \};
+                \};
+            \};
+            
+            MEMORY\_DIE-Background2: \{ // package.MEMORY\_DIE-Background2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5e-3;
+                        bottom = 5e-3;
+                        width = 5e-3;
+                        height = 5e-3;
+                        die_name = "MEMORY_DIE";
+                        die_index = 1;
+                    \};
+                \};
+            \};
+            
+            MEMORY\_DIE-HotSpot1: \{ // package.MEMORY\_DIE-HotSpot1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5e-3;
+                        bottom = 0.0;
+                        width = 5e-3;
+                        height = 5e-3;
+                        die_name = "MEMORY_DIE";
+                        die_index = 1;
+                    \};
+                \};
+            \};
+            
+            MEMORY\_DIE-HotSpot2: \{ // package.MEMORY\_DIE-HotSpot2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0;
+                        bottom = 5e-3;
+                        width = 5e-3;
+                        height = 5e-3;
+                        die_name = "MEMORY_DIE";
+                        die_index = 1;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core0: \{ // package.CORE\_DIE-Core0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0;
+                        bottom = 0.0;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core1: \{ // package.CORE\_DIE-Core1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 2.5e-3;
+                        bottom = 0.0;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core2: \{ // package.CORE\_DIE-Core2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5.0e-3;
+                        bottom = 0.0;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core3: \{ // package.CORE\_DIE-Core3
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 7.5e-3;
+                        bottom = 0.0;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core4: \{ // package.CORE\_DIE-Core4
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0;
+                        bottom = 6.5e-3;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core5: \{ // package.CORE\_DIE-Core5
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 2.5e-3;
+                        bottom = 6.5e-3;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core6: \{ // package.CORE\_DIE-Core6
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5.0e-3;
+                        bottom = 6.5e-3;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Core7: \{ // package.CORE\_DIE-Core7
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 7.5e-3;
+                        bottom = 6.5e-3;
+                        width = 2.5e-3;
+                        height = 3.5e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Cache0: \{ // package.CORE\_DIE-Cache0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0;
+                        bottom = 3.5e-3;
+                        width = 1.25e-3;
+                        height = 3.0e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-Cache1: \{ // package.CORE\_DIE-Cache1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.75e-3;
+                        bottom = 3.5e-3;
+                        width = 1.25e-3;
+                        height = 3.0e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-CLK: \{ // package.CORE\_DIE-CLK
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 1.25e-3;
+                        bottom = 3.5e-3;
+                        width = 1.25e-3;
+                        height = 3.0e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-FPU: \{ // package.CORE\_DIE-FPU
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 7.5e-3;
+                        bottom = 3.5e-3;
+                        width = 1.25e-3;
+                        height = 3.0e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            CORE\_DIE-CrossBar: \{ // package.CORE\_DIE-Crossbar
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 2.5e-3;
+                        bottom = 3.5e-3;
+                        width = 5.0e-3;
+                        height = 3.0e-3;
+                        die_name = "CORE_DIE";
+                        die_index = 0;
+                    \};
+                \};
+            \};
+        \};
+    \}; // End of package
+\};
+\end{alltt}
+}
+
+\pagebreak
+\subsection{HotSpot}
+\noindent
+HotSpot is a 2D-package thermal model. 
+Although it can be tweaked to simulate a 3D package, missing TSV models would not correctly model the thermal characteristics of the 3D package.
+{\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    package: \{
+        library: \{
+            model = "hotspot";
+            thermal_analysis = "transient"; // "transient" or "steady_state";
+            model_type = "grid"; // "grid" or "block";
+            grid_map_mode = "avg"; // "avg", "center", "min", or "max"
+            
+            thermal_threshold = 345.95;
+            ambient_temperature = 318.15;
+            temperature = 333.15;
+            
+            chip_thickness = 0.15e-3;
+            chip_thermal_conductivity = 100.0;
+            chip_heat = 1.75e6;
+
+            heatsink_convection_capacitance = 140.4;
+            heatsink_convection_resistance = 0.1;
+            heatsink_side = 60e-3;
+            heatsink_thickness = 6.9e-3;
+            heatsink_thermal_conductivity = 400.0;
+            heatsink_heat = 3.55e6;
+
+            spreader_side = 30e-3;
+            spreader_thickness = 1e-3;
+            spreader_thermal_conductivity = 400.0;
+            spreader_heat = 3.55e6;
+
+            interface_thickness = 20e-6;
+            interface_thermal_conductivity = 4.0;
+            interface_heat = 4.0e6;
+
+            secondary_model = false;
+            secondary_convection_resistance = 50.0;
+            secondary_convection_capacitance = 40.0;
+            metal_layers = 8;
+            metal_layer_thickness = 100e-6;
+                        
+            c4_thickness = 0.0001;
+            c4_side = 20e-6;
+            c4_pads = 400;
+
+            substrate_side = 0.021;
+            substrate_thickness = 1e-3;
+
+            solder_side = 0.021;
+            solder_thickness = 0.00094;
+
+            pcb_side = 0.1;
+            pcb_thickness = 0.002;
+
+            dtm_used = false;
+            leakage_used = false;
+            package_model_used = false;
+
+            grid_rows = 64; // Must be power of 2
+            grid_cols = 64; // Must be power of 2
+
+            layer: \{
+                tim: \{
+                    index = 1;
+                    is_source_layer = false;
+                    use_layer_partition = 0;
+                    lateral_heat_flow = true;
+                    heat = 4e6;
+                    resistance = 0.25;
+                    thickness = 20e-6;
+                \};
+                
+                silicon: \{
+                    index = 0;
+                    is_source_layer = true;
+                    lateral_heat_flow = true;
+                    heat = 1.75e6;
+                    resistance = 0.01;
+                    thickness = 0.15e-3;
+                \};
+            \};
+            
+            partition = ["package.L2_left",
+                         "package.L2",
+                         "package.L2_right",
+                         "package.Icache",
+                         "package.Dcache",
+                         "package.Bpred_0",
+                         "package.Bpred_1",
+                         "package.Bpred_2",
+                         "package.DTB_0",
+                         "package.DTB_1",
+                         "package.DTB_2",
+                         "package.FPAdd_0",
+                         "package.FPAdd_1",
+                         "package.FPReg_0",
+                         "package.FPReg_1",
+                         "package.FPReg_2",
+                         "package.FPReg_3",
+                         "package.FPMul_0",
+                         "package.FPMul_1",
+                         "package.FPMap_0",
+                         "package.FPMap_1",
+                         "package.IntMap",
+                         "package.IntQ",
+                         "package.IntReg_0",
+                         "package.IntReg_1",
+                         "package.IntExec",
+                         "package.FPQ",
+                         "package.LdStQ",
+                         "package.ITB_0",
+                         "package.ITB_1"];
+        \};
+        
+        component: \{
+            L2\_left: \{ // package.L2\_left
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0e-3;
+                        bottom = 9.8e-3;
+                        width = 4.9e-3;
+                        height = 6.2e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            L2: \{ // package.L2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 0.0e-3;
+                        bottom = 0.0e-3;
+                        width = 16.0e-3;
+                        height = 9.8e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            L2\_right: \{ // package.L2\_right
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 11.1e-3;
+                        bottom = 9.8e-3;
+                        width = 4.9e-3;
+                        height = 6.2e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            Icache: \{ // package.Icache
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 9.8e-3;
+                        width = 3.1e-3;
+                        height = 2.6e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            Dcache: \{ // package.Dcache
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.0e-3;
+                        bottom = 9.8e-3;
+                        width = 3.1e-3;
+                        height = 2.6e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            Bpred\_0: \{ // package.Bpred\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \}:
+            \};
+
+            Bpred\_1: \{ // package.Bpred\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5.933e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            Bpred\_2: \{ // package.Bpred\_2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.967e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            DTB\_0: \{ // package.DTB\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.0e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            DTB\_1: \{ // package.DTB\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 9.033e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            DTB\_2: \{ // package.DTB\_2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 10.067e-3;
+                        bottom = 12.4e-3;
+                        width = 1.033e-3;
+                        height = 0.7e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPAdd\_0: \{ // package.FPAdd\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 13.1e-3;
+                        width = 1.1e-3;
+                        height = 0.9e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPAdd\_1: \{ // package.FPAdd\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.0e-3;
+                        bottom = 13.1e-3;
+                        width = 1.1e-3;
+                        height = 0.9e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            FPReg\_0: \{ // package.FPReg\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 14.0e-3;
+                        width = 0.55e-3;
+                        height = 0.38e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPReg\_1: \{ // package.FPReg\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 5.4e-3;
+                        bottom = 14.0e-3;
+                        width = 0.55e-3;
+                        height = 0.38e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPReg\_2: \{ // package.FPReg\_2
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.0e-3;
+                        bottom = 14.0e-3;
+                        width = 0.55e-3;
+                        height = 0.38e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            FPReg\_3: \{ // package.FPReg\_3
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.55e-3;
+                        bottom = 14.0e-3;
+                        width = 0.55e-3;
+                        height = 0.38e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPMul\_0: \{ // package.FPMul\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 14.38e-3;
+                        width = 1.1e-3;
+                        height = 0.95e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPMul\_1: \{ // package.FPMul\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.0e-3;
+                        bottom = 14.38e-3;
+                        width = 1.1e-3;
+                        height = 0.95e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            FPMap\_0: \{ // package.FPMap\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 4.9e-3;
+                        bottom = 15.33e-3;
+                        width = 1.1e-3;
+                        height = 0.67e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPMap\_1: \{ // package.FPMap\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 6.0e-3;
+                        bottom = 15.33e-3;
+                        width = 1.1e-3;
+                        height = 0.67e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            IntMap: \{ // package.IntMap
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 7.1e-3;
+                        bottom = 14.65e-3;
+                        width = 0.9e-3;
+                        height = 1.35e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            IntQ: \{ // package.IntQ
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.0e-3;
+                        bottom = 14.65e-3;
+                        width = 1.3e-3;
+                        height = 1.35e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            IntReg\_0: \{ // package.IntReg\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 9.3e-3;
+                        bottom = 15.33e-3;
+                        width = 0.9e-3;
+                        height = 0.67e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            IntReg\_1: \{ // package.IntReg\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 10.2e-3;
+                        bottom = 15.33e-3;
+                        width = 0.9e-3;
+                        height = 0.67e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            IntExec: \{ // package.IntExec
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 9.3e-3;
+                        bottom = 13.1e-3;
+                        width = 1.8e-3;
+                        height = 2.23e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            FPQ: \{ // package.FPQ
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 7.1e-3;
+                        bottom = 13.1e-3;
+                        width = 0.9e-3;
+                        height = 1.55e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            LdStQ: \{ // package.LdStQ
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.0e-3;
+                        bottom = 13.7e-3;
+                        width = 1.3e-3;
+                        height = 0.95e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+            ITB\_0: \{ // package.ITB\_0
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.0e-3;
+                        bottom = 13.1e-3;
+                        width = 0.65e-3;
+                        height = 0.6e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+
+            ITB\_1: \{ // package.ITB\_1
+                library: \{
+                    model = "none";
+                    dimension: \{
+                        left = 8.65e-3;
+                        bottom = 13.1e-3;
+                        width = 0.65e-3;
+                        height = 0.6e-3;
+                        die_index = 0;
+                    \};
+                \};
+            \};
+            
+        \};
+    \}; // End of package
+\};
+\end{alltt}}
+
+\pagebreak
+\subsection{Microfluidics}
+\noindent
+Microfluidics is a compact 3D package thermal model with liquid cooling.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+    package: \{
+        library: \{
+            model = "microfluidics";
+            thermal_analysis = "steady_state";
+            grid_map_mode = "average";
+
+            /* Pin Fin dimension */
+            HC = 200e-6;
+            Dp = 100e-6;
+            NT = 34;
+            NL = 34;
+
+            /* Chip dimension */
+            ThSi = 100e-6;
+            ThO = 10e-6;
+            ThB = 10e-6;
+
+            /* Pumping power */
+            PPower = 0.03;
+
+            heff = 562.28;
+            hamb = 10.0;
+            Tfin = 293.15;
+            temperature = 293.15; // Initial temperature
+            ambient_temperature = 293.15;
+
+            rho_Si = 2330.0;
+            cp_Si = 707.0;
+            k_Si = 149.0;
+            rho_O = 220.0;
+            k_O = 1.4;
+            cp_B = 1000.0;
+            k_B = 1.4;
+            rho_f = 997.0;
+            cp_f = 4183.0;
+            k_f = 0.5945;
+            mu_f = 0.0008936;
+            
+            partition = ["package.proc.left_bottom",
+                         "package.proc.right_bottom",
+                         "package.proc.left_top",
+                         "package.proc.right_top",
+                         "package.mem.left_bottom",
+                         "package.mem.right_bottom",
+                         "package.mem.left_top",
+                         "package.mem.right_top"];
+        \};
+
+        component: \{
+            proc: \{ // package.proc
+                component: \{
+                    left\_bottom: \{ // package.proc.left\_bottom
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 0.0e-3;
+                                bottom = 0.0e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 0;
+                            \};
+                        \};
+                    \};
+                    
+                    right\_bottom: \{ // package.proc.right\_bottom
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 4.2e-3;
+                                bottom = 0.0e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 0;
+                            \};
+                        \};
+                    \};
+                    
+                    left\_top: \{ // package.proc.left\_top
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 0.0e-3;
+                                bottom = 4.2e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 0;
+                            \};
+                        \};
+                    \};
+                                
+                    right\_top: \{ // package.proc.right\_top
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 4.2e-3;
+                                bottom = 4.2e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 0;
+                            \};
+                        \};
+                    \};
+                \};
+            \}; // End of package.proc
+            
+            mem: \{ // package.mem
+                component: \{
+                    left\_bottom: \{ // package.mem.left\_bottom
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 0.0e-3;
+                                bottom = 0.0e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 1;
+                            \};
+                        \};
+                    \};
+
+                    right\_bottom: \{ // package.mem.right\_bottom
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 4.2e-3;
+                                bottom = 0.0e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 1;
+                            \};
+                        \};
+                    \};
+
+                    left\_top: \{ // package.mem.left\_top
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 0.0e-3;
+                                bottom = 4.2e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 1;
+                            \};
+                        \};
+                    \};
+                    
+                   {\bf right\_top}: \{ //{\bf package.mem.right\_top}
+                        library: \{
+                            model = "none";
+                            dimension: \{
+                                left = 4.2e-3;
+                                bottom = 4.2e-3;
+                                width = 4.2e-3;
+                                height = 4.2e-3;
+                                die_index = 1;
+                            \};
+                        \};
+                    \};
+                \};
+            \}; // End of{\bf package.mem}
+        \};
+    \}; // End of{\bf package}
+\};
+\end{alltt}}
+

@@ -1,0 +1,174 @@
+\section{Examples} \label{sec:examples}
+\subsection{Serial Simulation} \label{subsec:serial_simulation}
+\noindent
+The following example shows initializing the microarchitecture simulator and connecting the processor model to KitFox. 
+When running the microarchitecture timing simulation, stepwise KitFox functions can be called as shown in Section \ref{subsec:calculation_sequence}.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+#include <libconfig.h++>
+#include "kitfox.h"
+
+using namespace libKitFox;
+using namespace libconfig;
+using namespace std;
+
+int main(int argc, char** argv) \{
+    /* Create and configure KitFox */
+    kitfox_t *kitfox = new kitfox_t();
+    kitfox->configure("input.config");
+    
+    /* Create user microarchitecture simulator */
+    user_processor_t *processor = new processor("processor.config");
+    
+    /* Connect the processor to kitfox by passing the pointer. */
+    processor->connect_kitfox(kitfox);
+    
+    /* Run processor simulation: Within the run function, microarchitecture 
+    simulation is performed, and stepwise KitFox functions are called at 
+    user-defined sampling intervals. */
+    processor->run();
+    
+    delete kitfox; 
+    delete processor;
+
+    return 0;
+\}
+\end{alltt}
+}
+
+
+\subsection{Parallel Simulation}
+\noindent
+In parallel simulations, microarchitecture and KitFox simulations can be split into multiple processes. 
+KitFox itself can also be split into different processes. 
+In this case, each KitFox creates only the pseudo components that are to be modeled in its process, and the KitFox objects communicate across processes via the MPI interface to transfer the data between pseudo components. 
+Instead of passing the pointer to KitFox as shown in the serial simulation example, the processor model has to create an KitFox client to delegate the messages to the KitFox object in different process. 
+The following shows an example of creating and initializing parallel KitFox via the MPI interface.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+#include <mpi.h>
+#include <libconfig.h++>
+#include "kitfox.h"
+
+using namespace libKitFox;
+using namespace libconfig;
+using namespace std;
+
+int main(int argc, char **argv) \{
+    int N_LPs; // Number of processes
+    int Rank; // Rank of this process
+    int N_ArchLPs; // Number of architecture simulation processes
+    assert(N_ArchLPs < N_LPs);
+
+    /* Get MPI information. */
+    MPI_Init(&argc,&argv);
+    MPI_Comm_size(MPI_COMM_WORLD, &NPs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &Rank);
+    
+    /* Split MPI communicator to architecture simulators and KitFox servers. */
+    MPI_Comm LOCAL_COMM, INTER_COMM;
+    MPI_Comm_split(MPI_COMM_WORLD, IsArchLP(), Rank, &LOCAL_COMM);
+    MPI_Intercomm_create(LOCAL_COMM, 0, MPI_COMM_WORLD, 
+                         IsArchLP()?N_ArchLPs:0, 1234, &INTER_COMM);
+          
+    /* Get the MPI information within the intra-communicator. */               
+    int N_LocalNPs; // Number of processes within the intra-communicator
+    int LocalRank; // Rank of this process within the intra-communicator
+    MPI_Comm_size(LOCAL_COMM, &N_LocalNPs);
+    MPI_Comm_rank(LOCAL_COMM, &LocalRank);
+    
+    if(!IsArchLP() \{
+        /* Create and initialize the KitFox of this LP */
+        kitfox_t *kitfox = new kitfox_t(/*Intra-communicator*/ &LOCAL_COMM,
+                                        /*Inter-communicator*/ &INTER_COMM);
+
+        /* Cross-connect KitFox processes. This function is blocking until all KitFox
+        processes are created and connected. */
+        kitfox->connect();
+        
+        /* Initialize the KitFox of this process. */
+        kitfox->configure(argv[LocalRank]);
+    \}
+    else \{
+        /* Create user architecture simulator */
+        user_processor_t *processor = new processor("processor.config", &LOCAL_COMM);
+        
+        /* Create KitFox client and connect to the server */
+        int ConnectinKitFoxRank = get_which_KitFox_process_to_connect();
+        processor->connect_kitfox(&INTER_COMM, ConnectingKitFoxRank);
+        
+        /* Run processor simulation: Within the run function, architecture simulation 
+        is performed, and stepwise KitFox functions are called via KitFox clients. */
+        processor->run();
+    \}
+\}
+
+\end{alltt}
+}
+
+\noindent
+The following shows using the KitFox client within the user processor simulator.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+#include "kitfox-defs.h"
+#include "kitfox-client.h"
+
+void user_processor_t::connect_kitfox(MPI_Comm *InterComm, const int ConnectingKitFoxRank) \{
+    /* Create KitFox Client. InterComm is MPI inter-communicator, and
+    ConnectingKitFoxRank is the rank of the KitFox (within the KitFox intra-communicator) 
+    that this simulator wants to connect.
+    kitfox_client = new kitfox_client_t(InterComm, ConnectingKitFoxRank);
+    
+    /* Connect to KitFox in different process. This function is blocking until 
+    KitFox finishes initialization and accepts the connection. */
+    kitfox_client->connect_server(ConnectingKitFoxRank);
+\}
+
+/* Once connected, the KitFox client provides the same set of functions as KitFox. */
+void user_processor_t::run() \{
+    while (program runs) \{
+        clock_cycle++;
+        Do \{architecture timing simulation and counters collection\}
+    
+        if (@sampling point) \{
+            Second time = get_current_time();
+            Second period = get_sampling_interval();
+        
+            /* Calculate power for all source components with power models */
+            for (all source components with power models) \{
+                /* Functions without return values are non-blocking. */
+                kitfox_client->calculate_power(src_comp_id, time, period, src_comp_counters);
+            \}
+        
+            /* Calculate temperature at the component with thermal model. 
+            Power-temperature dependency is internally captured here. */
+            kitfox_client->calculate_temperature(package_cmp_id, time, period, true);
+        
+            /* Calculate failure rate for all components with reliability models. 
+            Temperature-voltage-frequency-reliability dependency is captured here. */
+            for (all components (e.g., floor-plans) with reliability models) \{
+                kitfox_client->calculate_failure_rate(flp_comp_id, time, period, true);
+            \}
+        
+            /* Probe any components of interest and retrieve the data. 
+            Functions with return values are blocking. */
+            Kelvin core0_temperature;
+            int error_code = kitfox_client->pull_data(core0_id, time, period,\(\backslash\)
+                             KITFOX_DATA_TEMPERATURE, &core0_temperature);
+            assert(error_code == KITFOX_QUEUE_ERROR_NONE);
+        
+            /* Apply execution control (e.g., frequency scaling) */
+            if(core0_temperature > thermal_threshold) \{
+                Hertz P4_state_freq = 1.0e9; // 1GHz
+                error_code = kitfox_client->push_and_synchronize_data(core0_id, time, period,\(\backslash\)
+                             KITFOX_DATA_CLOCK_FREQUENCY, &P4_state_freq);
+                assert(error_code == KITFOX_QUEUE_ERROR_NONE);
+            \}
+        \}
+    \}
+\}
+\end{alltt}}
+

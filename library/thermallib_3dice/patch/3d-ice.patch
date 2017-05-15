@@ -1,0 +1,231 @@
+diff -Nur 3d-ice/include/inspection_point.h ../3d-ice/include/inspection_point.h
+--- 3d-ice/include/inspection_point.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/inspection_point.h	2015-04-24 22:00:44.000000000 -0400
+@@ -240,7 +240,7 @@
+     {
+         /*! Pointer to the Floorplan Element */
+ 
+-        FloorplanElement *FloorplanElement ;
++        struct FloorplanElement *FloorplanElement ;
+ 
+         /*! The kind of quantity to be measured */
+ 
+@@ -373,10 +373,10 @@
+ 
+     union InspectionPoint_p
+     {
+-        Tcell    *Tcell ;     /*!< Pointer to a Tcell */
+-        Tflp     *Tflp ;      /*!< Pointer to a Tflp */
+-        Tflpel   *Tflpel ;    /*!< Pointer to a Tflpel */
+-        Tcoolant *Tcoolant ;  /*!< Pointer to a Tcoolant */
++        struct Tcell    *Tcell ;     /*!< Pointer to a Tcell */
++        struct Tflp     *Tflp ;      /*!< Pointer to a Tflp */
++        struct Tflpel   *Tflpel ;    /*!< Pointer to a Tflpel */
++        struct Tcoolant *Tcoolant ;  /*!< Pointer to a Tcoolant */
+     } ;
+ 
+     /*! Definition of the type InspectionPoint_p */
+@@ -413,7 +413,7 @@
+         /*! Pointer to the StackElement that will be used to print the outputs.
+          *  The inspection point will be applied to this stack element */
+ 
+-        StackElement *StackElement ;
++        struct StackElement *StackElement ;
+ 
+         /*! To collect inspection points in a linked list */
+ 
+diff -Nur 3d-ice/include/layer.h ../3d-ice/include/layer.h
+--- 3d-ice/include/layer.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/layer.h	2015-04-24 22:00:44.000000000 -0400
+@@ -74,7 +74,7 @@
+ 
+         /*! The material composing the layer */
+ 
+-        Material *Material ;
++        struct Material *Material ;
+ 
+         /*! Pointer to the 'next' layer (towards the top of the die),
+          *  to collect layers in a double linked list */
+diff -Nur 3d-ice/include/macros.h ../3d-ice/include/macros.h
+--- 3d-ice/include/macros.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/macros.h	2015-04-24 22:00:44.000000000 -0400
+@@ -54,10 +54,13 @@
+      * Returns the constant \f$ \Pi \f$
+      */
+ 
++#ifndef PI_H
++#define PI_H
+ #   define PI 3.14159265358979323846
++#endif
+ 
+-
+-
++#ifndef MINMAX_H
++#define MINMAX_H
+     /*! \def MAX(a,b)
+      *
+      * Returns the maximum value between \a a and \a b
+@@ -73,8 +76,7 @@
+      */
+ 
+ #   define MIN(a,b)  (((a) < (b)) ? (a) : (b))
+-
+-
++#endif
+ 
+     /*! \def PARALLEL(x,y)
+      *
+diff -Nur 3d-ice/include/stack_description.h ../3d-ice/include/stack_description.h
+--- 3d-ice/include/stack_description.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/stack_description.h	2015-04-24 22:00:44.000000000 -0400
+@@ -83,11 +83,11 @@
+ 
+         /*! Information about the heat dissipation throught the top surface */
+ 
+-        ConventionalHeatSink *ConventionalHeatSink ;
++        struct ConventionalHeatSink *ConventionalHeatSink ;
+ 
+         /*! Information about the (unique) type of channel used in the 3d stack */
+ 
+-        Channel *Channel ;
++        struct Channel *Channel ;
+ 
+         /*! The list of dies available to compose the 3d stack */
+ 
+@@ -103,7 +103,7 @@
+ 
+         /*! Collection of all the dimensions (chip, grid of cells, cell) */
+ 
+-        Dimensions *Dimensions ;
++        struct Dimensions *Dimensions ;
+     } ;
+ 
+ 
+diff -Nur 3d-ice/include/stack_element.h ../3d-ice/include/stack_element.h
+--- 3d-ice/include/stack_element.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/stack_element.h	2015-04-24 22:00:44.000000000 -0400
+@@ -71,9 +71,9 @@
+ 
+     union StackElement_p
+     {
+-        Layer   *Layer ;     /*!< Pointer to a Layer   */
+-        Die     *Die ;       /*!< Pointer to a Die     */
+-        Channel *Channel ;   /*!< Pointer to a Channel */
++        struct Layer   *Layer ;     /*!< Pointer to a Layer   */
++        struct Die     *Die ;       /*!< Pointer to a Die     */
++        struct Channel *Channel ;   /*!< Pointer to a Channel */
+     } ;
+ 
+     /*! Definition of the type StackElement_p */
+@@ -113,7 +113,7 @@
+         /*! A pointer to a Floorplan. This field is
+          *  used only if StaclElement::Type is \c TDICE_STACK_ELEMENT_DIE */
+ 
+-        Floorplan *Floorplan ;
++        struct Floorplan *Floorplan ;
+ 
+         /*! The offset (\# layers) of the first layer of the
+          *  stack element, counting from the first layer in the stack */
+diff -Nur 3d-ice/include/thermal_data.h ../3d-ice/include/thermal_data.h
+--- 3d-ice/include/thermal_data.h	2012-03-23 12:48:44.000000000 -0400
++++ ../3d-ice/include/thermal_data.h	2015-04-24 22:00:44.000000000 -0400
+@@ -332,6 +332,26 @@
+ 
+ /******************************************************************************/
+ 
++    /* static void -> void for the Energy Introspector integration 
++       Modified by William Song, Georgia Tech
++    */
++    void fill_system_vector
++    (
++        Dimensions    *dimensions,
++        double        *vector,
++        Source_t      *sources,
++        ThermalCell   *thermal_cells,
++        Temperature_t *temperatures
++    ) ;
++    
++    void fill_system_vector_steady
++    (
++        Dimensions *dimensions,
++        double     *vector,
++        Source_t   *sources
++    ) ;
++  
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff -Nur 3d-ice/makefile.def ../3d-ice/makefile.def
+--- 3d-ice/makefile.def	2012-03-23 12:48:47.000000000 -0400
++++ ../3d-ice/makefile.def	2015-04-24 22:00:44.000000000 -0400
+@@ -99,11 +99,11 @@
+  ##############################################################################
+ 
+ SLU_VERSION = 4.3
+-SLU_MAIN    = $(HOME)/SuperLU_$(SLU_VERSION)
+-SLU_INCLUDE = $(SLU_MAIN)/SRC
+-SLU_LIB     = $(SLU_MAIN)/lib
+-SLU_LIBS   = -L$(SLU_LIB) -lsuperlu_$(SLU_VERSION) -lblas
+-#SLU_LIBS    = -L$(SLU_LIB) -lsuperlu_$(SLU_VERSION) -L/usr/lib -lblas
++SLU_MAIN    = ../../SuperLU_4.3
++SLU_INCLUDE = ../../SuperLU_4.3/SRC
++SLU_LIB     = ../../SuperLU_4.3/lib
++SLU_LIBS   = -L../../SuperLU_4.3/lib -lsuperlu_$(SLU_VERSION) -lblas
++#SLU_LIBS    = -L../../SuperLU_4.3/lib -lsuperlu_$(SLU_VERSION) -L/usr/lib -lblas
+ 
+  #
+  # Commands and flags
+diff -Nur 3d-ice/sources/thermal_data.c ../3d-ice/sources/thermal_data.c
+--- 3d-ice/sources/thermal_data.c	2012-03-23 12:48:45.000000000 -0400
++++ ../3d-ice/sources/thermal_data.c	2015-04-24 22:00:44.000000000 -0400
+@@ -292,7 +292,10 @@
+ 
+ /******************************************************************************/
+ 
+-static void fill_system_vector
++/* static void -> void for the Energy Introspector integration 
++   Modified by William Song, Georgia Tech
++*/
++void fill_system_vector
+ (
+     Dimensions    *dimensions,
+     double        *vector,
+@@ -341,7 +344,10 @@
+ 
+ /******************************************************************************/
+ 
+-static void fill_system_vector_steady
++/* static void -> void for the Energy Introspector integration 
++   Modified by William Song, Georgia Tech
++ */
++void fill_system_vector_steady
+ (
+     Dimensions *dimensions,
+     double     *vector,
+diff --unified -Nur 3d-ice/bison/floorplan_parser.y ../3d-ice/bison/floorplan_parser.y
+--- 3d-ice/bison/floorplan_parser.y	2012-03-23 12:48:47.000000000 -0400
++++ ../3d-ice/bison/floorplan_parser.y	2016-09-01 19:45:52.953246602 -0400
+@@ -42,6 +42,9 @@
+     #include "floorplan_element.h"
+     #include "ic_element.h"
+     #include "powers_queue.h"
++    #include "floorplan.h"
++
++    typedef void* yyscan_t;
+ }
+ 
+ %union
+diff --unified -Nur 3d-ice.orig/bison/stack_description_parser.y 3d-ice/bison/stack_description_parser.y
+--- 3d-ice.orig/bison/stack_description_parser.y	2012-03-23 12:48:47.000000000 -0400
++++ 3d-ice/bison/stack_description_parser.y	2016-09-01 19:46:15.976346983 -0400
+@@ -44,6 +44,9 @@
+     #include "die.h"
+     #include "stack_element.h"
+     #include "inspection_point.h"
++    #include "stack_description.h"
++
++    typedef void* yyscan_t;
+ }
+ 
+ // The YYSTYPE union used to collect the types of tokens and rules

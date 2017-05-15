@@ -1,0 +1,124 @@
+#  The KitFox does NOT possess the copyrights of the following tools, and all 
+#  terms and conditions are subject to what the original developers present:
+#       DRAMSim: Maryland Memory-System Research, Univ. of Maryland
+#       DSENT: Computer Science and Artificial Intelligence Lab, MIT
+#       INTSIM: James Meindl's group, Georgia Tech
+#      	McPAT: Hewlett-Packard Labs
+#      	3D-ICE: Embedded Systems Lab, EPFL
+#      	HotSpot: Laboratory for Computer Architecture at Virginia, 
+#                Univ. of Virginia
+#       Microfluidics: Microelectronics & Emerging Technologies Thermal Lab, 
+#                      Georgia Tech
+#  The KitFox does NOT guarantee the same functionality, performance, or result
+#  of the above tools as the original developers' releases. The Use, 
+#  modification, and distribution of the KitFox is subject to the policy of the 
+#  Semiconductor Research Corporation (Task 2084.001). 
+#  Copyright 2012
+#  William Song, Sudhakar Yalamanchili, Saibal Mukhopadhyay
+#  Georgia Institute of Technology, Atlanta, GA 30332
+#  and Arun Rodrigues
+#  Sandia National Laboratories, Albuquerque, NM 87185
+
+1. Build Library Models:
+
+    1.1 Build DRAMSim (if used):
+        # Download DRAMSim2-2.2.2 (https://github.com/dramninjasUMD/DRAMSim2/archive/v2.2.2.tar.gz)
+        # to library/energylib_dramsim/tarball. The KitFox support the 2.2.2
+        # version, and other versions were not tested. Go back to the KitFox
+        # main directory, and type the following command to build the DRAMSim 
+        # and create an archive file.
+            $ make dramsim
+
+    1.2 Build DSENT (if used):
+        # Download DSENT 0.91 (https://sites.google.com/site/mitdsent/download)
+        # to library/energylib_dsent/tarball. The KitFox supports the 0.91 
+        # version, and other versions were not tested. Go back to the KitFox 
+        # main directory, and type the following command to build the DSENT 
+        # and create an archive file.
+            $ make dsent
+        # DSENT v0.91 has several build errors in native Linux and Mac 
+        # environments. Patches files are provided under 
+        # library/energylib_dsent/patch to fix the errors by renaming the file
+        # names and to create an archive file.
+        
+    1.3 Build INTSIM (if used):
+        # The alpha version (v1.0) of INTSIM is included under 
+        # library/energylib_intsim/tarball. This version of INTSIM was 
+        # converted from the original MATLAB code (which can also be found; 
+        # library/energylib_intsim/tarball/intsim_alpha_version.zip) to C/C++ 
+        # code. Type the following command to build the INTSIM and create and 
+        # archive file.
+            $ make intsim
+
+    1.4 Build McPAT (if used):
+        # Download McPAT 0.8 (http://www.hpl.hp.com/research/mcpat/mcpat0.8_r274.tar.gz)
+        # to library/energylib_mcpat/tarball. The KitFox supports the 0.8_r274 
+        # version, and other versions were not tested. Go back to the KitFox 
+        # main directory, and type the following command to build the McPAT 
+        # and create an archive file.
+            $ make mcpat
+    	# McPAT v0.8 has several (apparent) bugs and errors. Patch files are 
+        # provided under library/energylib_mcpat/patch/ to fix those. Please, 
+        # expect that some results can be different due to patches. Also, these
+        # patches files provide some additional functionalities such as to 
+        # support runtime power simulation and dynamic variable update 
+        # (i.e., voltage, temperature, etc.).
+
+    1.5 Build 3D-ICE (if used):
+        # Download SuperLU-4.3 (http://crd-legacy.lbl.gov/~xiaoye/SuperLU/superlu_4.3.tar.gz)
+        # and 3D-ICE 2.1 (http://esl.epfl.ch/files/content/sites/esl/files/3dice/3d-ice-2.1.zip) 
+        # to libary/thermallib_3dice/tarball. The KitFox supports the 2.1 
+        # version, and other versions were not tested. Go back to the KitFox 
+        # main directory, and type the following command to build SuperLU and 
+        # 3D-ICE and create archive files.
+        	$ make 3dice
+        # Some patch files are provided under library/thermallib_3dice/patch/ 
+        # only to fix build and link errors to create an archive file.
+        
+    1.6 Build HotSpot (if used):
+        # Download HotSpot5.02 (http://lava.cs.virginia.edu/HotSpot/grab/HotSpot-5.02.tar.gz)
+        # to library/thermallib/hotspot/tarball. The KitFox supports the 5.02 
+        # version, and other versions were not tested. Go back to the KitFox 
+        # main directory, and type the following command to build the HotSpot 
+        # and create an archive file.
+        	$ make hotspot
+        # Some patch files are provided under library/thermallib_hotspot/patch/ 
+        # only to fixe build and link errors when creating an archive file.
+
+    1.7 Build Microfluidics (if used):
+        # A tarball is included under library/thermallib_microfluidics/tarball
+        # Type the following command to build the microfluidics model.
+                $ make microfluidics
+            
+    1.8 Build Failure (if used):
+        # A tarball is included under library/reliabilitylib_failure/tarball
+        # Type the following command to build the failure model.
+        	$ make failure
+
+    # NOTE: In each library model, there is a tarball directory which includes 
+    # downloaded copy(ies) from the original developers' website. In case that 
+    # there is a problem with downloading the specified version of model, the 
+    # included tarball may be used to build it, but we do not guarantee this is
+    # the same copy as the original developers' release nor possess any 
+    # copyrights or responsibilities of using it. All terms and conditions are 
+    # subject to what the original developers present.
+
+
+2. Build KitFox:
+    # After models are compiled, type the following command to build the KitFox.
+        $ make
+    # This command will create a libKitFox.a archive file that can be linked 
+    # to a simulator with "-lKitFox -L(KITFOX_DIRECTORY_PATH)" flags with the 
+    # flags with built models.
+        # to use DRAMSim, include "-ldramsim"
+        # to use DSENT, include "-ldsent"
+        # to use INTSIM, include "-lintsim"
+        # to use McPAT, include "-lmcpat"
+        # to use 3D-ICE, include "-l3dice"
+        # to use HotSpot, include "-lhotspot"
+        # to use Microfluidics, include "-lmicrofluidics"
+        # to use Failure, include "-lfailure"
+    # Also include "-I(KITFOX_DIRECTORY_PATH) 
+    # -I(KITFOX_DIRECTORY_PATH)/communicator" flags when compiling the 
+    # simulator with "include "kitfox.h"
+        

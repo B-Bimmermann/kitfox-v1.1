@@ -1,0 +1,71 @@
+\documentclass[10pt]{article}
+\newcommand{\version}{1.0}
+
+\usepackage{array}
+\usepackage{epsfig}
+\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{lipsum}
+\usepackage{authblk}
+\usepackage{geometry}
+\usepackage{titlesec}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{program}
+\usepackage{algorithmic}
+\usepackage{alltt}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[linesnumbered]{algorithm2e}
+\captionsetup[table]{format=plain,labelformat=simple,labelsep=period}
+\captionsetup[figure]{format=plain,labelformat=simple,labelsep=period}
+\geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+\titleformat{\section}{\normalfont\fontsize{14}{14}\bfseries}{\thesection}{14pt}{}
+\titleformat{\subsection}{\normalfont\fontsize{12}{12}\bfseries}{\thesubsection}{12pt}{}
+\titleformat{\subsubsection}{\normalfont\fontsize{11}{11}}{\thesubsubsection}{11pt}{}
+
+\begin{document}
+
+\title{\vspace*{80pt}\leavevmode 
+\fontsize{20pt}{24pt}\selectfont \textbf{KitFox: Multi-Physics Libraries for Integrated Power, Thermal, and Reliability Simulation of Multicore Microarchitecture}
+\vspace*{20pt}\leavevmode}
+
+\author[$\dagger$]{William Song}
+\author[$\dagger$]{Saibal Mukhopadhyay}
+\author[$\dagger$]{Sudhakar Yalamanchili}
+\author[$\ddagger$]{Arun Rodrigues}
+
+\affil[$\dagger$]{School of Electrical \& Computer Engineering, Georgia Tech, Atlanta, GA}
+\affil[$\ddagger$]{Sandia National Labs, Albuquerque, NM}
+\date{\vspace*{20pt}\leavevmode Apr. 2015}
+\maketitle
+\pagebreak
+\tableofcontents
+\pagebreak
+
+\input{introduction}
+\pagebreak
+\input{installation}
+\pagebreak
+\input{libraries}
+\pagebreak
+\input{configuration}
+\pagebreak
+\input{data_types}
+\pagebreak
+\input{api_functions}
+\pagebreak
+\input{data_queues}
+\pagebreak
+\input{calculations}
+\pagebreak
+\input{examples}
+\pagebreak
+\input{integration}
+\pagebreak
+\input{references}
+\pagebreak
+\input{appendix}
+
+\end{document}        

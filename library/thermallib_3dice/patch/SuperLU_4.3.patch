@@ -1,0 +1,40 @@
+diff -Nur SuperLU_4.3/make.inc ../SuperLU_4.3/make.inc
+--- SuperLU_4.3/make.inc	2011-12-12 17:34:18.000000000 -0500
++++ ../SuperLU_4.3/make.inc	2015-04-24 22:00:21.000000000 -0400
+@@ -21,20 +21,20 @@
+ #
+ #  The name of the libraries to be created/linked to
+ #
+-SuperLUroot	= $(HOME)/Codes/SuperLU/SuperLU_4.3
+-SUPERLULIB   	= $(SuperLUroot)/lib/libsuperlu_4.3.a
+-TMGLIB       	= libtmglib.a
+-
+-## BLASLIB   	= $(SuperLUroot)/lib/libblas.a
++#SuperLUroot	= $(HOME)/energy_introspector/THERMALLIB_3DICE/SuperLU_4.3
++SUPERLULIB   	= ../lib/libsuperlu_4.3.a
+ 
+-BLASDEF 	= -DUSE_VENDOR_BLAS
+-BLASLIB 	= -L$(HOME)/lib/GotoBLAS -lgoto
++BLASLIB   	= ../lib/libblas.a
+ 
+ ## ATLAS BLAS causes single-precision to fail
++#BLASDEF = -DUSE_VENDOR_BLAS
+ #BLASLIB   	= -L/usr/lib/atlas -lblas
++
+ ## This BLAS causes single-precision to fail the test in SuperLU
++#BLASDEF 	= -DUSE_VENDOR_BLAS
+ #BLASLIB 	= -L/usr/lib -lblas
+ 
++TMGLIB       	= libtmglib.a
+ LIBS		= $(SUPERLULIB) $(BLASLIB)
+ 
+ #
+@@ -46,7 +46,7 @@
+ RANLIB       = ranlib
+ 
+ CC           = gcc
+-CFLAGS       = -DPRNTlevel=0 -O3
++CFLAGS       = -O3
+ NOOPTS       = 
+ FORTRAN	     = g77
+ FFLAGS       = -O2

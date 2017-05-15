@@ -1,0 +1,246 @@
+\section{Integration of Models (for Advanced Users)}
+\noindent
+This section is intended for advanced users who plan to integrate new models into KitFox framework. 
+
+\subsection{Library}
+\noindent
+All models integrated in KitFox are categorized into classes called \emph{library}. 
+$|model\_library\_t|$ is the base class for all physical models, which is defined as follows. 
+The constructor take the pointer to the pseudo component and model library type ($|KITFOX_LIBRARY_ENERGY_MODEL|$, $|KITFOX_LIBRARY_THERMAL_MODEL|$, or $|KITFOX_LIBRARY_RELIABILITY_MODEL|$). 
+$|update_library_variable|$ is the runtime variable update function that is registered as a callback function of the data queue (refer to Section \ref{sec:data_queues}).
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class model_library_t \{
+public:
+    model_library_t(pseudo_component_t *PseudoComponent, int Type);
+    virtual \(\sim\)model_library_t();
+    
+    int type; // Library type
+    
+    /* Callback function associated with the data queue to update runtime variables 
+    and states of subclass model */
+    virtual bool update_library_variable(int Type, void *Value, 
+                                         bool IsLibraryVariable = false) = 0;
+                                         
+    /* Initialization function to be defined by subclass model */
+    virtual void initialize() = 0;
+    
+protected:
+    pseudo_component_t *pseudo_component; // Pointer to pseudo component
+\};
+\end{alltt}
+}
+
+\noindent
+There are three different derivative classes defined; \emph{energy}, \emph{thermal}, \emph{reliability} libraries.
+
+\subsubsection{Energy Library}
+\noindent
+Energy library is one of the subclasses of $|model_library_t|$ and the base class for energy/power models. 
+Possible models ($|Type|$) are $|KITFOX_LIBRARY_DRAMSIM|$, $|KITFOX_LIBRARY_DSENT|$, $|KITFOX_LIBRARY_INTSIM|$, and $|KITFOX_LIBRARY_MCPAT|$. 
+$|get_unit_energy|$ function returns the $|unit_energy|$ class that includes per-access energies of different access types (refer to Section \ref{sec:data_type}). 
+$|get_runtime_power|$ is called inside $|calculate_power|$ function of KitFox (refer to Section \ref{sec:calculation_of_physical_properties}) and returns the runtime power including leakage. 
+If the model support area estimation, $|get_area|$ can be used, otherwise a trivial value is returned. 
+$|get_tdp_power|$ calculates and returns the maximum power based on the assumption of peak access counts and temperature.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class energy_library_t : public model_library_t \{
+public:
+    energy_library_t(pseudo_component_t *PseudoComponent, int Type);
+    virtual \(\sim\)energy_library_t();
+
+    int type; // Model type
+    
+    /* Returns per-access energies of different access types. */
+    virtual unit_energy_t get_unit_energy() = 0;
+    
+    /* Calculates TDP power w.r.t (user defined) max duty cycle 
+    and peak temperature. */
+    virtual power_t get_tdp_power(Kelvin MaxTemperature = 373.0) = 0;
+    
+    /* Calculates runtime power with respect to counters. */
+    virtual power_t get_runtime_power(Second Time, Second Period, counter_t Counter) = 0;
+    
+    /* Calculates area (if possible) */
+    virtual MeterSquare get_area(void) = 0;
+\};
+\end{alltt}
+}
+
+\subsubsection{Thermal Library}
+Thermal library is one of the subclasses of $|model_library_t|$ and the base class for thermal models. 
+Possible models ($|Type|$) are $|KITFOX_LIBRARY_3DICE|$, $|KITFOX_LIBRARY_HOTSPOT|$, and $|KITFOX_LIBRARY_MICROFLUIDICS|$. 
+$|push_floorplan_power|$ function maps the power input to the floorplan power structure of the thermal model, and $|calculate_temperature|$ can only be called after $|push_floorplan_power|$ is called for all floorplans to update the power inputs. 
+This sequence is implemented in the $|calculate_temperature|$ of KitFox, so the thermal library only has to implement the details of power mapping and temperature calculation. 
+Note that $|calculate_temperature|$ does not have a return value. 
+After this function is called, KitFox calls $|get_thermal_grid|$, $|get_floorplan_temperature|$, or $|get_point_temperature|$ to update the data queues of pseudo components, so $|calculate_temperature|$ only has to update the internal thermal states and be ready for subsequent data queries. 
+Other floorplan mapping functions provide useful information about the floorplans.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class thermal_library_t : public model_library_t \{
+public:
+    thermal_library_t(pseudo_component_t *PseudoComponent, int Type);
+    virtual \(\sim\)thermal_library_t();
+    
+    int Type; // Model type
+
+    /* Calculates transient or steady-state temperature. */
+    virtual void calculate_temperature(Second Time, Second Period) = 0;
+    
+    /* Returns 3D thermal grid stack of source layers. */
+    virtual grid_t<Kelvin> get_thermal_grid(void) = 0;
+    
+    /* Returns representative floorplan temperature. */
+    virtual Kelvin get_floorplan_temperature(Comp_ID ComponentID, 
+                   int Type = KITFOX_TEMPERATURE_MAPPING_UNKNOWN) = 0;
+    
+    /* Returns point temperature on the die. */
+    virtual Kelvin get_point_temperature(Meter X, Meter Y, Index Layer) = 0;
+    
+    /* Maps the power to the internal floor-plan structure or array. */
+    virtual void push_floorplan_power(Comp_ID ComponentID, power_t PartitionPower) = 0;
+
+    /* Other floorplan mapping functions */
+    void add_pseudo_floorplan(std::string ComponentName, Comp_ID ComponentID);
+    const Index get_pseudo_floorplan_counts(void);
+    const Comp_ID get_pseudo_floorplan_id(std::string ComponentName);
+    const char* get_pseudo_floorplan_name(Comp_ID ComponentID);
+    const Comp_ID get_pseudo_floorplan_id(unsigned i);
+\};
+\end{alltt}
+}
+
+\subsubsection{Reliability Library}
+\noindent
+Thermal library is one of the subclasses of $|model_library_t|$ and the base class for reliability models. 
+Possible model ($|Type|$) is $|KITFOX_LIBRARY_FAILURE|$. 
+$|get_failure_rate|$ calculates the instantaneous failure rate $\lambda$ for given temperature, voltage, frequency, and duration (i.e., period). 
+Cumulative calculation of the failure rate (refer to Section \ref{sec:calculation_of_physical_properties}) is handled in KitFox, and this function only needs to calculate the failure rate without considering the failure rate history.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class reliability_library_t : public model_library_t \{
+public:
+    reliability_library_t(pseudo_component_t *PseudoComponent, int Type);
+    virtual \(\sim\)reliability_library_t();
+    
+    int Type; // Model type
+    
+    virtual Unitless get_failure_rate(Second Time, Second Period, Kelvin Temperature,\(\backslash\)
+    Volt Vdd, Hertz Frequency) = 0;
+\};
+\end{alltt}
+}
+
+\subsection{Wrapper Class of Integrated Models}
+\noindent
+For each model being integrated into the library, a wrapper class is created to define the details of virtual functions of base classes. 
+For instance, HotSpot is a thermal model and takes $|thermal_library_t|$ as the base class that again takes the base class $|model_library_t|$. 
+The following shows an example of HotSpot wrapper class.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+#include "library.h"
+
+class thermallib_hotspot : public thermal_library_t \{
+    thermallib_hotspot(pseudo_component_t *PseudoComponent);
+    \(\sim\)thermallib_hotspot();
+    
+    virtual void initialize() \{ 
+        /* Define the initialization of HotSpot variables */ 
+    \}
+    
+    virtual void calculate_temperature(Second Time, Second Period) \{
+        /* Define the temperature calculation method of HotSpot */
+    \}
+    
+    virtual grid_t<Kelvin> get_thermal_grid() \{
+        /* Returns the 3D (or 2D) thermal grid for only source layers */
+    \}
+    
+    virtual Kelvin get_point_temperature(Meter X, Meter Y, Index Layer) \{
+        /* Returns the temperature of the given point on the die */
+    \}
+    
+    virtual void push_floorplan_temperature(Comp_ID ComponentID, power_t PartitionPower) \{
+        /* Map the power input to the power structure of floor-plans. If the thermal model 
+        uses string name to identify the floor-plan, the base class provides
+        get\_pseudo\_floorplan\_name to retrieve the floor-plan name based on ComponentID.
+        This name-ID mapping is created in KitFox, so the thermal library can readily use it.*/
+        std::string floorplan_name = get_floorplan_name(ComponentID);
+    \}
+    
+    virtual void update_library_variable(int Type, void *Value, bool IsLibraryVariable) \{
+        /* This function implements the update of variable. Note that this function is called 
+        when there is data insertion into the queue of pseudo components. Type denotes
+        data type. If data type is not the KitFox-defined data such as KITFOX\_DATA\_TEMPERATURE,
+        then IsLibraryVariable must be false.
+        */
+    \}
+private:
+    /* Other HotSpot variables or structures */
+\};
+\end{alltt}
+}
+
+\subsubsection{Parsing Input Configuration}
+\noindent
+With integrated input configuration, the wrapper class must be aware of parsing the input to initialize the variable of the model in the $|initialize|$ function. 
+The $|pseudo_component_t|$ provides methods to read parameters from the input configuration file. 
+The following is the list of $|libconfig|$-related functions that $|pseudo_component_t|$ provides.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+libconfig::Setting& get_setting() const;
+libconfig::Setting& get_library_setting() const;
+const bool exists_library(void);
+const bool exists(std::string &Var, bool InPathLookup = false);
+const bool exists(const char *Var, bool InPathLookup = false);
+const bool exists_in_library(std::string &Var, bool InPathLookup = false);
+const bool exists_in_library(const char *Var, bool InPathLookup = false);
+libconfig::Setting& lookup(std::string &Var, bool InPathLookup = false);
+libconfig::Setting& lookup(const char *Var, bool InPathLookup = false);
+libconfig::Setting& lookup_in_library(std::string &Var, bool InPathLookup = false);
+libconfig::Setting& lookup_in_library(const char *Var, bool InPathLookup = false);
+\end{alltt}
+}
+
+\noindent
+The following shows an example of retrieving input parameters via $|pseudo_component_t|$. 
+Note that the base class $|model_library_t|$ has the pointer to the pseudo component.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+void thermalllib_hotspot::initialize() \{
+    /* This function looks up "grid_rows" parameters only in the library of
+    this pseudo component. If not defined, it throws an exception error. */
+    unsigned grid_rows = pseudo_component->lookup_in_library("grid_rows");
+    
+    /* This function does recursive lookup of parameter "voltage" in the library of
+    this pseudo component and all of its ancestor components. */
+    unsigned voltage = pseudo_component->lookup_in_library("voltage", true);
+    
+    /* It can be tested if a parameter is defined in the input configuration to do 
+    conditional initialization of a variable. */
+    double clock_frequency;
+    if(pseudo_component->exists_in_library("clock_frequency")) \{
+        clock_frequency = pseudo_component->lookup_in_library("clock_frequency");
+    \}
+    else \{
+        clock_frequency = 1e9;
+    \}
+    
+    /* libconfig setting can be returned as well, which provides useful functionality
+    for arrays, groups, etc. Refer to libconfig documentation. */
+    Setting &libconfig_setting = pseudo_component->lookup_in_library("layers");
+    for(unsigned i =0; i < libconfig_setting.getLength(); i++) \{
+        /* Initialize the parameters of each layer of the package. */
+    \}
+\}
+\end{alltt}
+}
+

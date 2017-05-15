@@ -1,0 +1,249 @@
+\section{Installation} \label{sec:installation}
+\subsection{Prerequisite} \label{subsec:prerequisite}
+\noindent 
+The following packages are required to be installed in the system in prior to building KitFox and supported modeling tools:
+\begin{itemize}
+\item{g++ v4.2 or later} \vspace*{-5pt}\leavevmode
+\item{open-mpi v1.4 or later} \vspace*{-5pt}\leavevmode
+\item{libconfig++} \vspace*{-5pt}\leavevmode
+\item{bison v2.4.1 and flex for 3D-ICE}
+\label{item:prerequisite}
+\end{itemize}
+
+\subsection{Download} \label{subsec:download}
+\noindent 
+The latest stable version of KitFox can be obtained from the following website:
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+\url{http://manifold.gatech.edu/projects/kitfox/}
+
+\end{alltt}
+}
+
+\noindent 
+The latest development copy in progress can be obtained from the repository:
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ svn co \url{https://svn.ece.gatech.edu/repos/Manifold/trunk/code/models/kitfox/}
+
+\end{alltt}
+}
+
+\subsection{Files and Directories} \label{subsec:files_and_directories}
+\noindent
+KitFox is organized with the following files and directories:
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+kitfox
+    | \dots component.h
+    | \dots component.cc
+    | \dots configuration.h
+    | \dots configuration.cc
+    | \dots kitfox-defs.h
+    | \dots kitfox.h
+    | \dots kitfox.cc
+    | \dots library.h
+    | \dots library.cc
+    | \dots queue.h
+    | \dots queue.cc
+    | \dots communicator/
+        | \dots kitfox-client.h
+        | \dots kitfox-net.h
+        | \dots kitfox-server.h
+        | \dots kitfox-server.cc
+    | \dots config/
+        | \dots dramsim.config
+        | \dots dsent.config
+        | \dots intsim.config
+        | \dots mcpat.config
+        | \dots tsv.config
+        | \dots failure.config
+        | \dots 3dice.config
+        | \dots hotspot.config
+        | \dots microfluidics.config
+    | \dots library/
+        | \dots energylib_dramsim/
+            | \dots energylib\_dramsim.h
+            | \dots energylib\_dramsim.cc
+            | \dots patch/
+            | \dots tarball/
+        | \dots energylib_dsent/
+            | \dots energylib\_dsent.h
+            | \dots energylib\_dsent.cc
+            | \dots patch/
+            | \dots tarball/
+        | \dots energylib_intsim/
+            | \dots energylib\_intsim.h
+            | \dots energylib\_intsim.cc      
+            | \dots patch/
+            | \dots tarball/
+        | \dots energylib_mcpat/
+            | \dots energylib\_mcpat.h
+            | \dots energylib\_mcpat.cc
+            | \dots patch/
+            | \dots tarball
+        | \dots energylib_tsv/
+            | \dots energylib\_tsv.h
+            | \dots energylib\_tsv.cc
+            | \dots patch/
+            | \dots tarball
+        | \dots reliabilitylib_failure/
+            | \dots reliabilitylib\_failure.h
+            | \dots reliabilitylib\_failure.cc      
+            | \dots patch/
+            | \dots tarball/
+      | \dots thermallib_3dice/
+            | \dots thermallib\_3dice.h
+            | \dots thermallib\_3dice.cc      
+            | \dots patch/
+            | \dots tarball/
+      | \dots thermallib_hotspot/
+            | \dots thermallib\_hotspot.h
+            | \dots thermallib\_hotspot.cc
+            | \dots patch/
+            | \dots tarball/
+      | \dots thermallib_microfluidics/
+            | \dots thermallib\_microfluidics.h
+            | \dots thermallib\_microfluidics.cc            
+            | \dots patch/
+            | \dots tarball/
+\end{alltt}
+}
+
+\subsection{Building Models} \label{subsec:building_models}
+\subsubsection{Downloading Models} \label{subsubsec:downloading_models}
+\noindent
+\textbf{NOTE:} 
+KitFox does NOT possess the copyrights of the following supported models. 
+All terms and conditions are subject to what original developers present. 
+KitFox does not guarantee the correctness or identical performance as the original distributions.
+
+\noindent
+We strongly recommend to acquire the models through developers'€™ distributions. 
+Downloading the compatible version of each model is scripted in the $|Makefile|$ via a $|wget|$ command, but not all models are supported in this way due to developers' distribution methods. 
+The paths to obtain the models are listed below:
+\begin{itemize}
+\item{\textbf{DRAMSim2}\\
+- Version: v2.2.2\\
+- Source: \url{https://github.com/dramninjasUMD/DRAMSim2}\\
+- Download destination: library/energylib\_dramsim/tarball/} \vspace*{-5pt}\leavevmode
+\item{\textbf{DSENT}\\
+- Version: v0.91\\
+- Source: \url{https://sites.google.com/site/mitdsent/download}\\
+- Download destination: library/energylib\_dsent/tarball/} \vspace*{-5pt}\leavevmode
+\item{\textbf{McPAT}\\ 
+- Version: v0.8\\
+- Source: \url{http://www.hpl.hp.com/research/mcpat}\\
+- Directory destination: library/energylib\_mcpat/tarball/} \vspace*{-5pt}\leavevmode
+\item{\textbf{3D-ICE} \\
+- Version: v2.1\\
+- Source: \url{http://esl.epfl.ch/3d-ice/download.html}\\
+- Dependency (SuperLU-4.3): \url{http://crd-legacy.lbl.gov/~xiaoye/SuperLU}\\
+- Download destination: library/thermallib\_3dice/tarball/} \vspace*{-5pt}\leavevmode
+\item{\textbf{HotSpot}\\
+- Version: v5.02\\
+- Source: \url{http://lava.cs.virginia.edu/HotSpot/download_form2.html}\\
+- Download destination: library/thermallib\_hotspot/tarball/}
+\end{itemize} 
+
+\noindent
+The tarball of each model has to be downloaded to the $|tarball|$ directory of the corresponding model.
+For instance, download the compatible version of McPAT ($|mcpat0.8\_r274.tar.gz|$) to $|library/energylib\_mcpat/tarball/|$.
+Other models not listed above were developed with KitFox, and the developers agreed to distribute them along with KitFox.
+In each model, a $|patch|$ file provides corrections to the model to solve compile errors due to the integration.
+These changes are not intended to alter the calculated results of the original version, but we do not guarantee the correctness or identical performance as original distributions.
+
+\subsubsection{Compiling Models} \label{subsubsec:compiling_models}
+\noindent
+At the main directory of KitFox, each model can be compiled individually via the following command:
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make <model name>
+\end{alltt}
+}
+
+\noindent
+For instance, $|make mcpat|$ compiles the McPAT source files and creates an archive file $|libmcpat.a|$ in the main directory. 
+$|model name|$ has to be one of the following:
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make dramsim
+$ make dsent
+$ make intsim
+$ make mcpat
+$ make tsv
+$ make failure
+$ make 3dice
+$ make hotspot
+$ make microfluidics
+\end{alltt}
+}
+
+\noindent
+Alternatively, all models included in KitFox can be built by using the following command:
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make models
+\end{alltt}
+}
+
+\subsection{Build KitFox} \label{subsec:build_kitfox}
+After the models that are to be used are compiled, KitFox can be built using the following command:
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make kitfox
+\end{alltt}
+}
+
+\noindent
+This command creates an archive file $|libKitFox.a|$ that has to be linked to the architecture simulator along with the archive files of built models (e.g., $|libmcpat.a|$).
+Note that only the compiled models create archive files and are compiled with KitFox.
+\\
+
+\noindent
+There are two different ways to clean the KitFox files. 
+The first command cleans the object and archive files of KitFox. 
+Re-compiling KitFox requires only $|make kitfox|$ command and does not need to re-build the models.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make clean
+\end{alltt}
+}
+
+\noindent
+The second command completely cleans all the objects and executables of the built models and KitFox.
+Re-compiling KitFox requires to repeat all the steps from building the models.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+$ make distclean
+\end{alltt}
+}
+
+\subsection{Linking to Architecture Simulator} \label{subsec:linking_to_architecture_simulator}
+\noindent
+When compiling the user architecture simulator with KitFox, the archive files of the models and KitFox have to be linked.
+If some models are not build in the previous steps, they should not be linked.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+CPPFLAGS += -I\$(KITFOX_DIRECTORY) -I\$(KITFOX_DIRECTORY)/communicator
+LDFLAGS += -lKitFox -ldramsim -ldsent -lintsim -lmcpat -ltsv -lfailure -l3dice -lhotspot 
+           -lmicrofluidics -L$(KITFOX_DIRECTORY)
+\end{alltt}
+}
+

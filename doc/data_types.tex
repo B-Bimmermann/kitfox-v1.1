@@ -1,0 +1,228 @@
+\section{Data Types} \label{sec:data_type}
+\noindent
+The same physical quantity is expressed by different notations, units, or even data formats by integrating multiple models, especially the third-party tools.
+For instance, temperature in Celsius, Fahrenheit, or Kelvin in data types of $|int|$, $|unsigned|$, $|float|$, $|double|$.
+KitFox defines the data types of shared physical quantities used across multiple physical models.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+typedef int Index;            // KITFOX_DATA_INDEX
+typedef uint64_t Comp_ID;     // Pseudo Component ID
+typedef uint64_t Count;       // KITFOX_DATA_COUNT
+typedef double Meter;         // KITFOX_DATA_LENGTH
+typedef double MeterSquare;   // KITFOX_DATA_AREA
+typedef double MeterCube;     // KITFOX_DATA_VOLUME
+typedef double Second;        // KITFOX_DATA_TIME, KITFOX_DATA_PERIOD
+typedef double Hertz;         // KITFOX_DATA_CLOCK_FREQUENCY
+typedef double Volt;          // KITFOX_DATA_VOLTAGE, KITFOX_DATA_THRESHOLD_VOLTAGE
+typedef double Joule;         // KITFOX_DATA_ENERGY
+typedef double Watt;          // KITFOX_DATA_POWER, KITFOX_DATA_TDP
+typedef double Kelvin;        // KITFOX_DATA_TEMPERATURE, KITFOX_DATA_AMBIENT_TEMPERATURE
+typedef double Unitless;      // KITFOX_DATA_FAILURE_RATE
+\end{alltt}
+}
+
+\subsection{Dimension} \label{subsec:dimension}
+\noindent
+Dimension data ($|KITFOX\_DATA\_DIMENSION|$) are used to define the geometry of the component, e.g., floorplans. 
+Dimension uses the left-bottom corner for the orientation.
+Note that the $|area|$ can be calculated by a physical model without known width and height information, so $|area|$ is not necessarily the same as $|width|\times|height|$.
+If the $|area|$ is non-zero, $|get\_area|$ function returns $|area|$, or otherwise this function returns $|width|\times|height|$.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class dimension_t \{
+public:
+    dimension_t();
+
+    Index die_index; // Index of the processor die in 3D package (0 by default and 2D)
+    char die_name[MAX_KITFOX_COMP_NAME_LENGTH]; // Name of the processor die
+    Meter left, bottom; // Left and bottom orientation of the component
+    Meter width, height; // x, y-dimensional length
+    MeterSquare area; // Area
+    
+    const MeterSquare get_area(); // Returns area (if non-zero) or width*height
+    const Meter get_center_x() const; // Returns left+width/2
+    const Meter get_center_y() const; // Returns bottom+height/2
+    const Meter get_left() const; // Returns left
+    const Meter get_right() const; // Returns left+width
+    const Meter get_bottom() const; // Returns bottom
+    const Meter get_top() const; // Returns bottom+height
+    void clear(); // Reset function
+\};
+\end{alltt}
+}
+
+\subsection{Grid} \label{subsec:grid}
+\noindent
+Thermal grid ($|KITFOX_DATA_THERMAL_GRID|$) stores 3D mesh data of thermal grid cells. Note that this data cannot be transmitted across MPI processes.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T>
+class grid_t \{
+public:
+    grid_t();
+    grid_t(Meter CellWidth, Meter CellHeight,\(\backslash\)
+           unsigned Columns, unsigned Rows, unsigned Dies);
+    
+    unsigned cols(); // Returns x
+    unsigned rows(); // Returns y
+    unsigned dies(); // Returns z
+    void operator=(grid_t<T> &g); // Assignment
+    T& operator[](unsigned i) // Indexing operator
+    T& operator()(unsigned Columns, unsigned Rows, unsigned Dies);
+    void reserve(unsigned Columns, unsigned Rows, unsigned Dies);
+    void clear(); // Reset function
+    Meter grid_cell_width, grid_cell_height; // Grid cell geometry
+private:
+    unsigned x, y, z; // x, y, z dimensional size
+\};
+\end{alltt}
+}
+
+\subsection{Counter} \label{subsec:counter}
+\noindent
+Access counters ($|KITFOX_DATA_COUNTER|$) represent microarchitectural activities of a component.
+The dynamic power is calculated based on the counter numbers.
+$|switching|$ counts represent logical switching activities of the component such as combinational logic, functional unit, wire, etc. 
+$|read|$ and $|write|$ counts mean typical and read/write behaviors of storage units including cache, memory, array, buffer, queue, etc. 
+For caches, $|read|$ and $|write|$ counts implicitly include the accesses to tag arrays, so tag access counts must not be counted in addition read/write counters.
+$|read\_tag|$ and $|write\_tag|$ are used to count the read/write accesses to tag arrays. 
+Note that both read and write cache misses are counted by $|read\_tag|$, and $|write\_tag|$ is not the counter for write misses but used to represent tag write/update behaviors such as the tag update of reservation station. 
+In fact, a cache miss incurs multiple increments of counters. 
+First, it reads the tag array ($|read\_tag++|$) and finds a miss. 
+MSHR is a separate unit than the main cache array, so the MSHR has to be modeled with another pseudo component. 
+The MSHR counters must not be mixed with the cache counters. 
+This is the same for other scheduling buffers in the cache including prefetch and writeback buffers. 
+When the cache miss is served from the next-level cache or memory, the cache array is updated ($|write++|$). 
+For a fully-associative cache, a cache access requires the search of multiple entries to determine hit or miss, which is different from the access behavior or typical set-associative cache. 
+To account for this case, $|search|$ counter is used to represent the entry-searching behavior of the cache array. 
+In this situation, $|read|$, $|write|$, or tag accesses indicate the direct access to a cache entry, not including the search behavior.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class counter_t \{
+public:
+    counter_t();
+    
+    Count switching; // Logical switching activities (e.g., logics, wires, ALUs, etc.)
+    Count read; // Read accesses of a storage unit (e.g., caches, arrays, queues, etc.)
+    Count write; // Write accesses of a storage unit
+    Count search; // Tag search of a CAM structure (fully-associative cache).
+    Count read_tag; // Tag read accesses (e.g., cache miss)
+    Count write_tag; // Tag write accesses (e.g., tag update)
+    /* Additional counters for DRAM */
+    Count precharge; // Precharge counts
+    Count background_open_page_high; 
+    Count background_open_page_low; 
+    Count background_closed_page_high; 
+    Count background_closed_page_low;
+    
+    void operator=(const counter_t &c);
+    const counter_t operator+(const counter_t &c);
+    const counter_t operator-(const counter_t &c);
+    const counter_t operator*(const Count &c);
+    const counter_t operator/(const Count &c);
+    void clear(); // Reset function
+\};
+\end{alltt}
+}
+
+\subsection{Unit Energy} \label{subsec:unit_energy}
+\noindent
+Unit energy ($|KITFOX_DATA_UNIT_ENERGY|$) defines the per-access energies of distinct access behaviors defined in the $|counter_t|$ class.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class unit_energy_t \{
+public:
+    unit_energy_t();
+    
+    Joule baseline; // Activity-independent dynamic energy consumption per clock cycle
+    Joule switching;
+    Joule read;
+    Joule write;
+    Joule read_tag;
+    Joule write_tag;
+    Joule search;
+    Joule precharge;
+    Joule background_open_page_high; 
+    Joule background_open_page_low; 
+    Joule background_closed_page_high; 
+    Joule background_closed_page_low;
+    Joule leakage; // Leakage energy dissipation per clock cycle
+    
+    void operator=(const unit_energy_t &e);
+    const unit_energy_t operator+(const unit_energy_t &e);
+    const unit_energy_t operator-(const unit_energy_t &e);
+    void clear(); // Reset function    
+\};
+\end{alltt}
+}
+
+\subsection{Energy} \label{subsec:energy}
+\noindent
+Energy class ($|KITFPX_DATA_ENERGY|$) represents the generic energy definition comprised of dynamic and leakage portions.
+
+{\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class energy_t \{
+public:
+    energy_t();
+    
+    Joule total;
+    Joule dynamic;
+    Joule leakage;
+    
+    Joule get_total(); // Returns total (if non-zero) or dynamic+leakage
+    void operator(const energy_t &e);
+    const energy_t operator+(const energy_t &e);
+    const energy_t operator-(const energy_t &e);
+    void clear(); // Reset function
+\};
+\end{alltt}}
+
+\subsection{Power} \label{subsec:power}
+\noindent
+Power ($|KITFOX_DATA_POWER|$ or $|KITFOX_DATA_TDP|$) represent generic power (or TDP) definition comprised of dynamic and leakage portions.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+class power_t \{
+public:
+    power_t();
+    
+    Watt total;
+    Watt dynamic;
+    Watt leakage;
+    
+    Watt get_total(); // Returns total (if non-zero) or dynamic+leakage
+    void operator(const power_t &e);
+    const power_t operator+(const power_t &e);
+    const power_t operator-(const power_t &e);
+    void clear(); // Reset function
+\};
+\end{alltt}
+}
+
+\subsection{Data Conversion} \label{subsec:data_conversion}
+\noindent
+Several operators are defined in $|ei-defs.h|$ to simplify the common data conversions, such as energy from/to power.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+inline power_t operator*(const energy_t &e, const Hertz &f); // Power=Energy*Freq
+inline power_t operator/(const energy_t &e, const Second &t); // Power=Energy/Time
+inline energy_t operator/(const power_t &p, const Hertz &f); // Energy=Power/Freq
+inline energy_t operator*(const power_t &p, const Second &t); // Energy=Power*Time
+\end{alltt}
+}
+

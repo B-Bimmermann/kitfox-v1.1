@@ -1,0 +1,148 @@
+\section{List of API Functions} \label{sec:list_of_api_functions}
+\noindent
+This section lists the API functions of KitFox.
+For the examples of using these API functions, refer to the later sections of this document.
+
+\subsection{KitFox Constructor and Configuration Functions} \label{subsec:kitfox_configuration_functions}
+\noindent
+The KitFox constructor needs one input argument for serial simulation and two arguments for parallel simulation.
+$|KitFoxComm|$ is an MPI intra-communicator between KitFox processes in parallel simulations, and $|InterComm|$ is an MPI inter-communicator between KitFox servers and clients (i.e., user simulator components).
+Detailed implementation about the MPI communicators will be explained in the later sections of this document (Section \ref{sec:examples}).
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+kitfox_t(MPI_Comm *KitFoxComm = NULL, MPI_Comm *InterComm = NULL);
+\end{alltt}
+}
+
+\noindent
+The following function configures the pseudo component hierarchy, based on the input configuration file and initializes physical models.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+void configure(const char *ConfigFile);
+\end{alltt}
+}
+
+\noindent
+This function finds the pseudo component with $|ComponentName|$ and returns the integer ID assigned by KitFox.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+const Comp_ID get_component_id(std::string ComponentName);
+\end{alltt}
+}
+
+\noindent
+This function finds the pseudo component with $|ComponentID|$ and returns the string name (i.e., component path in the input configuration).
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+std::string get_component_name(Comp_ID ComponentID);
+\end{alltt}
+}
+
+\subsection{Computational Functions} \label{subsec:computational_functions}
+\noindent
+This function triggers the power calculation of the energy library model associated with a pseudo component, based on the access counters. Calculated power is stored in the queue of the pseudo component.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+void calculate_power(Comp_ID ComponentID, Second Time, Second Period, counter_t Counter);
+\end{alltt}
+}
+
+\noindent
+This function triggers the temperature calculation of the pseudo component. 
+Before calculating temperature, this function internally synchronizes the power data across pseudo components.
+It recursively aggregates the power numbers from the leaf components up to the pseudo component that is associated with the thermal library.
+After power data synchronization, the pseudo components that are designated as the floorplans of the thermal library store the up-to-date power data.
+Then, the temperature calculation function of the thermal library is invoked.
+After calculating the thermal field, the floorplan components are updated with the new temperature values stored in the data queues.
+When inserting the thermal data, it also synchronizes the pseudo components by recursively inserting the temperature value of the floorplan to the data queue of every descendent component.
+This assumes that no placement information is necessarily provided with the descendant components of the floorplan, and hence uniform thermal field is assumed within the floorplan.
+If descendent components are associated with energy library models, inserting new temperature data invokes the library-update functions that handle leakage-feedback interactions.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+void calculate_temperature(Comp_ID ComponentID, Second Time, Second Period);
+\end{alltt}
+}
+
+\noindent
+This function triggers the calculation of failure rate $\lambda t$. 
+Calculated failure rates are stored in the data queue of pseudo components. 
+Temperature, voltage, and clock frequency data of the pseudo component calculating the failure rate must be up to date before calling this function. 
+Otherwise, the simulation terminates by detecting the synchronization error.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+void calculate_failure_rate(Comp_ID ComponentID, Second Time, Second Period);
+\end{alltt}
+}
+
+\subsection{Data Queue Functions} \label{subsec:data_queue_functions}
+\noindent
+This function inserts the data into the queue of pseudo components. 
+Return value is an error\_code that must be equal to $|KITFOX_QUEUE_ERROR_NONE|$ if the operation is successful.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T>
+const int push_data(Comp_ID ComponentID, Second Time, Second Period, int DataType, T *Data);
+
+template <typename T>
+const int push_data(Comp_ID ComponentID, Second Time, int DataType, T *Data);
+\end{alltt}
+}
+
+\noindent
+This function retrieves the data from the queue of pseudo components. 
+Return value is also an error\_code that must be equal to $|KITFOX_QUEUE_ERROR_NONE|$ if the operation is successful.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T>
+const int pull_data(Comp_ID ComponentID, Second Time, Second Period, int DataType, T *Data);
+
+template <typename T>
+const int pull_data(Comp_ID ComponentID, Second Time, int DataType, T *Data);
+\end{alltt}
+}
+
+\noindent
+This function overwrites the data in the queue of pseudo component. 
+Return value is an error\_code that must be equal to $|KITFOX_QUEUE_ERROR_NONE|$ if the operation is successful.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T>
+const int overwrite_data(Comp_ID ComponentID, Second Time, Second Period, int DataType, T *Data);
+
+template <typename T>
+const int overwrite_data(Comp_ID ComponentID, Second Time, int DataType, T *Data);
+\end{alltt}
+}
+
+\noindent
+These functions synchronize the queue data of pseudo components. 
+An error\_code is returned, which has to be $|KITFOX_QUEUE_ERROR_NONE|$ if the operation is successful.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+const in synchronize_data(Comp_ID ComponentID, Second Time, Second Period, int DataType);
+
+template <typename T>
+const int synchronize_and_pull_data(Comp_ID ComponentID, Second Time, Second Period,\(\backslash\)
+                                    int DataType, T *Data);
+                                    
+template <typename T>
+const int push_and_synchronize_data(Comp_ID ComponentID, Second Time, Second Period,\(\backslash\)
+                                    int DataType, T *Data);
+                                    
+template <typename T>
+const int overwrite_and_synchronize_data(Comp_ID ComponentID, Second Time, Second Period,\(\backslash\)
+                                         int DataType, T *Data);
+\end{alltt}
+}
+

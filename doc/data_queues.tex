@@ -1,0 +1,241 @@
+\section{Data Queues} \label{sec:data_queues}
+\subsection{Data Queue Types}
+\noindent
+Data queues are used to store measurement data from multicore timing simulation and associated physical models. 
+Organization and operation of these data queues are central to correct modeling of multi-physics interactions. 
+In KitFox, computed results from each physical model are stored in \emph{data queues} to handle cross-reference between libraries and runtime update of models. 
+Each data queue stores a single type of data (e.g., power) and is identifiable with type information that indicates which type of data is stored within. 
+Each element in the queue is time-stamped with 1) simulation time at which it was created and 2) sampling interval at which it was recorded. 
+Since the computed results are stored in separate structures rather than overwriting the variables of models, user or other libraries can refer to the correct results with time times while runtime updates of the models can independently proceed without corrupting the results. 
+There are two types of queues as follows.
+
+\subsubsection{Closed Queue (queue for periodic data)} \label{subsubsec:closed_queue}
+\noindent
+Discrete-time data such as power and temperature are calculated and stored at the end of sampling interval, $\text{time} = t$ based on observed statistics during period $p$. 
+These data are regarded as valid during $(t − p, t]$ duration, and the queue returns the data for any access requests between $t − p$ and t (sec) including $t$ (sec).
+
+\subsubsection{Open Queue (queue for aperiodic data)} \label{subsubsec:open_queue}
+\noindent
+Some types of data are aperiodically collected during runtime simulation. 
+For example, clock frequency remains constant until a control mechanism (e.g., dynamic frequency scaling) decides to change the clock frequency. 
+In such a case, datum stored at $\text{time} = t$ is valid for $[t, \infty)$ or until a new value is inserted at $t + \delta$ (sec). The queue returns the data for access requests between $t$ and $t + \delta$ (or $\infty$) including $t$ (sec).
+
+\subsection{Creating Data Queues} \label{subsec:creating_data_queues}
+\noindent
+When pseudo components are created, several queues are created by default. The followings are the list of default data queues created with pseudo components.
+
+\begin{itemize}
+\item{Close queues ($|KITFOX_QUEUE_DISCRETE|$):\\
+power ($|KITFOX_DATA_POWER|$), temperature ($|KITFOX_DATA_TEMPERATURE|$)} \vspace*{-5pt}\leavevmode
+\item{Open queues ($|KITFOX_QUEUE_OPEN|$):\\
+TDP($|KITFOX_DATA_TDP|$), voltage ($|KITFOX_DATA_VOLTAGE|$), dimension ($|KITFOX_DATA_DIMENSION|$),\\
+threshold voltage ($|KITFOX_DATA_THRESHOLD_VOLTAGE|$),\\
+clock frequency ($|KITFOX_DATA_CLOCK_FREQUENCY|$)}
+\end{itemize}
+
+\noindent
+Depending on the library type, additional default queues are created in the pseudo components.
+
+\begin{itemize}
+\item{Power models: counters ($|KITFOX_DATA_COUNTERS|$)} \vspace*{-5pt}\leavevmode
+\item{Thermal models: thermal grid ($|KITFOX_DATA_THERMAL_GRID|$)} \vspace*{-5pt}\leavevmode
+\item{Reliability models: failure rate ($|KITFOX_DATA_FAILURE_RATE|$)}
+\end{itemize}
+
+\noindent
+Data queues can also be explicitly created by defining the options in the input configuration file. 
+If the queue is already created by default, no duplicated queues will be created.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+   {\bf source}: \{ // Component {\bf source}
+        data_queue = ["KITFOX_DATA_TEMPERATURE", "KITFOX_DATA_POWER", "KITFOX_DATA_COUNTER"];
+        queue_size = 2; // All data queues have 2 entries.
+        library: \{ // Physical model parameters are defined here. \};
+    \};
+\};
+\end{alltt}
+}
+
+\noindent
+Or alternatively, the queue size can be independently defined.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+component: \{
+   {\bf source}: \{ // Component {\bf source}
+        data_queue: \{
+            KITFOX_DATA_TEMPERATURE: \{ size = 2; \}; // 2-entry temperature queue
+            KITFOX_DATA_POWER: \{ size = 2; \}; // 2-entry power queue
+            KITFOX_DATA_COUNTER: \{ size = 1 \}; // 1-entry counter queue
+        \};
+        library: \{ // Physical model parameters are defined here. \};
+    \};
+\};
+\end{alltt}
+}
+
+\subsection{Accessing Data Queues} \label{subsec:accessing_data_queues}
+\noindent
+There are three queue operations defined: $|push\_data|$ (data insertion), $|pull\_data|$ (data collection), and $|overwrite\_data|$ (data replacement). 
+$|push\_data|$ and $|pull\_data|$ are basic write and read operations of the data queue, respectively. 
+$|pull|$ operation is not a dequeue operation, and dequeuing is implicitly handled when the queue becomes full. 
+$|overwrite\_data|$ function replaces the existing entry with the new value. 
+All these queue operations require data type (e.g., $|KITFOX_DATA_POWER|$) and time tag information (i.e.,g time $t$ and period $p$). 
+A queue operation first finds the data queue with the data type identifier, where each data queue stores a single type of data. 
+Time tag is checked at every queue operation, and error detection is provided. 
+For $|push\_data|$ operation, data interval must be contiguous. 
+If the period $p$ is not provided (i.e., $p$ = $|UNSPECIFIED_TIME|$), the queue operation implicitly derives the period value by comparing with the last entry in the queue. 
+For $|pull\_data|$ operation, a data request must match the time tag ($t$ and $p$ pair) of an existing entry. 
+If no matching entry is found, an error code is set. 
+If the period $p$ is not provided, it tries to find the interval that the time $t$ falls into and returns the value of that interval. 
+$|overwrite\_data|$ is combined operation of pull-and-push. 
+It first performs the same process as the pull operation and then replaces the data value if a matching entry is found. 
+The following lists the queue operations functions provided with KitFox.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T> const int push_data(Comp_ID ComponentID, Second Time,\(\backslash\)
+                      Second Period, int DataType, T *Data);
+template <typename T> const int pull_data(Comp_ID ComponentID, Second Time,\(\backslash\)
+                      Second Period, int DataType, T *Data);
+template <typename T> const int overwrite_data(Comp_ID ComponentID, Second Time,\(\backslash\)
+                      Second Period, int DataType, T *Data);
+\end{alltt}
+}
+
+\noindent
+The example below shows how to insert the power data using the $|push|$ function and retrieving the value via the $|pull|$ operation.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+/* Pseudo component ID */
+// Get the component ID of a pseudo component package.cores.core0
+Comp_ID core0_id = kitfox->get_component_id("package.cores.core0");
+
+/* Timing information */
+Second current_time = 120.0; // 120 seconds
+Second sampling_period = 10.0 // 10-second interval
+
+/* Data (power for example) */
+power_t core0_power;
+core0_power.dynamic = 23.8; // 23.8W dynamic power
+core0_power.leakage = 5.7; // 6.2W leakage power
+
+/* Push operation */
+// Insert the data into the queue of pseudo component{\bf package.cores.core0}.
+int error_code = kitfox->push_data(core0_id, current_time, sampling_period,\(\backslash\)
+                         KITFOX_DATA_POWER, &core0_power);
+assert(error_code == KITFOX_QUEUE_ERROR_NONE); // Check queue operation status.
+
+/* Pull operation */
+// Acquire the data from the queue of pseudo component{\bf package.cores.core0}.
+// Find the matching entry with the given time \(t\) since period \(p\) is undefined.
+int error_code = kitfox->pull_data(core0_id, current_time, UNSPECIFIED_TIME,\(\backslash\)
+                         KITFOX_DATA_POWER, &core0_power);
+assert(error_code == KITFOX_QUEUE_ERROR_NONE); // Check queue operation status.
+
+std::cout << "core0.power = " << core0_power.get_total() << std::endl;
+\end{alltt}
+}
+
+\noindent
+When there is an error with queue operation, a non-zero error code is returned. 
+The following lists the error codes of the data queue. 
+$|overwrite\_data|$ is a combined operation of push and pull, and it produces one of the error codes that push or pull may generate.
+
+\begin{itemize}
+\item{$|KITFOX_QUEUE_ERROR_NONE|$: Successful queue operation} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_TIME_DISCONTINUOUS|$: $|push\_data|$ with a gap between data intervals} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_OUTORDER|$: $|push\_data|$ with older time tag than existing entries} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_OVERLAP|$: $|push\_data|$ with overlapping data intervals} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_INVALID|$: $|pull\_data|$ with no matching time tag} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_DATA_DUPLICATED|$: Duplicated data queue is created; the second queue creation is ignored.} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_DATA_INVALID|$: No data queue exists for given data type.} \vspace*{-5pt}\leavevmode
+\item{$|KITFOX_QUEUE_ERROR_DATA_TYPE_INVALID|$: Data queue exists, but data type does not match.}
+\end{itemize}
+
+\subsection{Synchronizing Data Queues between Pseudo Components} \label{subsec:synchronizing_data_queues}
+\noindent
+The data queues of pseudo components can be synchronized via $|synchronize\_data|$ function. 
+When this function is called at a pseudo component, data are coalesced or distributed, depending on the data type, across the pseudo component hierarchy between the given pseudo component and its descent components. 
+$|synchronize\_data|$ function is recursively called inside KitFox until the pseudo component and all of its descendent components are synchronized.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+const int synchronize_data(Comp_ID ComponentID, Second Time, Second Period, int DataType);
+\end{alltt}
+}
+
+\noindent
+The following describes the synchronization method of different data types.
+
+\begin{itemize}
+\item{Counter ($|KITFOX_DATA_COUNTER|$): $|counter\_t|$ values are added from leaf components to the component of synchronization.} \vspace*{-5pt}\leavevmode
+\item{Power ($|KITFOX_DATA_POWER|$ or $|KITFOX_DATA_TDP|$): $|power\_t|$ values are aggregated from leaf components to the component of synchronization.} \vspace*{-5pt}\leavevmode
+\item{Dimension ($|KITFOX_DATA_DIMENSION|$): area is added up from leaf components to the component of synchronization. Geometry information (i.e., $|left|$, $|bottom|$, $|width|$, $|height|$) is not altered.} \vspace*{-5pt}\leavevmode
+\item{Temperature ($|KITFOX_DATA_TEMPERATURE|$): $|Kelvin|$ values are equally applied to sub-components if they do not contain valid temperature values at the given data interval. If a sub-component has a valid temperature, its temperature value is used from that point to its sub-components.} \vspace*{-5pt}\leavevmode
+\item{Voltage ($|KITFOX_DATA_VOLTAGE|$ or $|KITFOX_DATA_THRESHOLD_VOLTAGE|$): $|Volt|$ values are equally applied to sub-components if they do not contain valid voltage values at the given data interval. If a sub-component has a valid voltage, its voltage value is used from that point to its sub-components.} \vspace*{-5pt}\leavevmode
+\item{Clock frequency ($|KITFOX_DATA_CLOCK_FREQUENCY|$): $|Hertz|$ values are equally applied to sub-components if they do not contain valid clock frequency at the given data interval. If a sub-component has a valid clock frequency, its value is used from that point to its sub-components.} \vspace*{-5pt}\leavevmode
+\item{Other data types: There is no synchronization method defined for other data types.}
+\end{itemize}
+
+\noindent
+In the following example, $|synchronize\_data|$ is called for $|KITFOX_DATA_VOLTAGE|$ at at the pseudo component $|package.cores.core0|$. Inside KitFox, all sub-components of $|package.cores.core0|$ are updated with the new voltage value by assuming they do not explicitly store different different voltage values at the given data interval.
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+Volt new_voltage = 1.28; // 1.28V voltage scaling is to be applied.
+Second current_time = 210.0; // Current time is 210 seconds.
+
+/* Push operation for new voltage */
+// Voltage is stored in an open queue, where period \(p\) is unknown.
+int error_code = kitfox->push_data(core0_id, current_time, UNSPECIFIED_TIME,\(\backslash\)
+                                   KITFOX_DATA_VOLTAGE, &new_voltage);
+assert(error_code == KITFOX_QUEUE_ERROR_NONE);
+
+/* Synchronize all sub-components of{\bf package.cores.core0}  */
+int error_code = kitfox->synchronize_data(core0_id, current_time, UNSPECIFIED_TIME,\(\backslash\)
+                                          KITFOX_DATA_VOLTAGE);
+assert(error_code == KITFOX_QUEUE_ERROR_NONE);
+\end{alltt}}
+
+\noindent
+Or alternatively, the example above can be performed by a single function.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+/* Push and synchronize for new voltage */
+int error_code = kitfox->push_and_synchronize_data(core0_id, current_time, UNSPECIFIED_TIME,\(\backslash\)
+                                                   KITFOX_DATA_VOLTAGE, &new_voltage);
+assert(error_code == KITFOX_QUEUE_ERROR_NONE);
+\end{alltt}
+}
+
+\subsection{Data Queues and Library Updates} \label{subsec:library_updates}
+\noindent
+If a pseudo component is associated with a physical model, $|update\_library\_variable|$ function of the physical model is registered with the data queue when KitFox is configured. 
+When new data values are inserted into the queues (i.e., $|push\_data|$ or $|overwrite\_data|$), queue operations internally call $|update\_library\_variable|$ functions. 
+This function defines how to update dependent variables or states in reaction to the new data. 
+Since the library updates in the data queues are internally handled, users do not need to control this situation but should be aware that data insertion into the queue incurs the automated update of the variables of physical models. 
+The advantage of using library updates is that the physical interactions can be simply implemented by transferring data between the queues of pseudo components. 
+The following is the internal implementation of data queue insertion.
+
+{
+\fontsize{10pt}{11pt}\selectfont
+\begin{alltt}
+template <typename T>
+void queue_t::create(const Second Time, const Second Period, const int DataType, T Data) \{
+    // Error code is set if data queue does not exist.
+    data_queue_t<T> *data_queue = get_data_queue<T>(DataType);
+    if(data_queue) \{
+        data_queue->push_back(Time, Period, Data); // Data insertion
+        callback(DataType, &Data); // Library update
+        error_code = KITFOX_QUEUE_ERROR_NONE; // No error
+    \}
+\}
+\end{alltt}
+}
+
